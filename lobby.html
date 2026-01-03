@@ -64,29 +64,71 @@
 
         // --- LÓGICA DO JOGADOR (CELULAR) ---
         function entrarNoLobby() {
-            const nome = document.getElementById('nomeInput').value;
+            const nome = document.getElementById('nomeInput').value.trim();
             if(!nome) return alert("Digite um nome!");
             
-            const meuId = "user_" + Math.floor(Math.random() * 10000);
-            localStorage.setItem('meuId_TTT', meuId);
+            // Guardamos o nome no navegador para facilitar o refresh
+            localStorage.setItem('meuNome_TTT', nome);
 
-            db.ref('jogadores/' + meuId).set({ nome: nome, papel: "pendente" });
-
-            document.getElementById('form-registro').style.display = 'none';
-            document.getElementById('status-papel').style.display = 'block';
-
-            // Celular fica ouvindo se o papel mudou
-            db.ref('jogadores/' + meuId + '/papel').on('value', (snapshot) => {
-                const papel = snapshot.val();
-                if(papel === "TRAIDOR") {
-                    document.body.style.backgroundColor = "red";
-                    document.getElementById('texto-papel').innerText = "VOCÊ É O TRAIDOR!";
-                } else if(papel === "INOCENTE") {
-                    document.body.style.backgroundColor = "blue";
-                    document.getElementById('texto-papel').innerText = "VOCÊ É INOCENTE";
+            // 1. PROCURAMOS NO FIREBASE SE ESTE NOME JÁ EXISTE
+            db.ref('jogadores/' + nome).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    // Se o nome já existe (voltou após fechar o navegador)
+                    console.log("Bem-vindo de volta, " + nome);
+                } else {
+                    // Se é um jogador novo
+                    db.ref('jogadores/' + nome).set({
+                        nome: nome,
+                        papel: "pendente"
+                    });
                 }
+
+                // 2. MOSTRAR A TELA DE AGUARDAR / PAPEL
+                document.getElementById('form-registro').style.display = 'none';
+                document.getElementById('status-papel').style.display = 'block';
+
+                // 3. ATIVAR A ESCUTA (Se o mestre sortear agora ou se já sorteou antes)
+                vincularEscutaPapel(nome);
             });
         }
+
+        function vincularEscutaPapel(nomeID) {
+        // Monitora o registro específico deste jogador
+            db.ref('jogadores/' + nomeID).on('value', (snapshot) => {
+            const dados = snapshot.val();
+
+            // SE OS DADOS NÃO EXISTIREM (Mestre clicou em Limpar Sala)
+            if (!snapshot.exists()) {
+                console.log("A sala foi limpa pelo mestre!");
+                voltarParaTelaInicial();
+                return;
+            }
+
+            // SE EXISTIREM, VERIFICA O PAPEL
+            const papel = dados.papel;
+            if(papel === "TRAIDOR") {
+                document.body.style.backgroundColor = "red";
+                document.getElementById('texto-papel').innerText = "VOCÊ É O TRAIDOR!";
+            } else if(papel === "INOCENTE") {
+                document.body.style.backgroundColor = "blue";
+                document.getElementById('texto-papel').innerText = "VOCÊ É INOCENTE";
+            } else {
+                // Caso o papel volte para 'pendente'
+                document.body.style.backgroundColor = "#2c3e50";
+                document.getElementById('texto-papel').innerText = "Aguardando mestre sortear...";
+            }
+        });
+    }
+
+    // Função para resetar a interface do celular
+    function voltarParaTelaInicial() {
+        localStorage.removeItem('meuNome_TTT'); // Opcional: limpa o nome salvo
+        document.body.style.backgroundColor = "#2c3e50"; // Cor original
+        document.getElementById('secao-jogador').style.display = 'block';
+        document.getElementById('form-registro').style.display = 'block';
+        document.getElementById('status-papel').style.display = 'none';
+        document.getElementById('nomeInput').value = ""; // Limpa o campo de texto
+    }
 
         // --- LÓGICA DA TV (NOTEBOOK) ---
         function iniciarMonitoramentoTV() {
