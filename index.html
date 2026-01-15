@@ -44,11 +44,12 @@
             text-align: center;
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: clamp(18px, 4vmin, 28px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -364,14 +365,12 @@
         .lua-animada {
             position: fixed;
             left: 50%;
-            bottom: -100px;
-            /* Começa fora da tela, embaixo */
+            bottom: -20vmin;
+            /* também responsivo */
             transform: translateX(-50%);
-            font-size: 80px;
+            font-size: 12vmin;
             z-index: 10000;
-            /* Acima do fader */
             transition: bottom 4s linear;
-            /* 4 segundos de subida */
         }
 
         /* Classe que dispara a subida */
@@ -481,50 +480,36 @@
         <div id="game-area" class="hidden">
             <h2 id="status-msg">Aguardando o Narrador distribuir os papéis...</h2>
 
-            <div id="role-card" class="card hidden">
-                <h1 id="role-name"></h1>
-                <p id="role-ability"></p>
-            </div>
-
-
-            <div id="upload-screen" class="file-upload-container">
-                <button onclick="importarDoFirebase()"
+            <div id="upload-screen" class="file-upload-container hidden">
+                <button onclick="abrirgame()"
                     style="padding: 10px; cursor: pointer; background: #eee; border: 1px solid #ccc;">
-                    📥 Ler Dados do Firebase
+                    📥 Ler Dados do Firebase (INICIAR PARTIDA ⚔️) [abrir game]
                 </button>
             </div>
 
-            <button onclick="sincronizarFirebase()" style="background: #e67e22; color: white;">
-                🚀 Enviar Papéis para Celulares
-            </button>
-
             <div id="game-content" class="hidden">
+
+                <h2 id="status-personagem">Seu personagem</h2>
+
+                <div id="role-card" class="card hidden">
+                    <h1 id="role-name"></h1>
+                    <p id="role-ability"></p>
+                </div>
 
                 <div id="admin-controls"></div>
 
                 <div class="header">
-                    <h1>🌙 Roteiro: Noite</h1>
+                    <h1>Roteiro</h1>
                 </div>
 
+                <div id="titulo-grimorio" class="section-title hidden">📖 Grimório da Partida</div>
 
-                <div class="section-title">📖 Grimório da Partida</div>
                 <div id="grimoire-list">
                 </div>
 
                 <div class="section-title" style="margin-top: 30px; color: #D84315;">📜 Passo a Passo</div>
 
-                <div
-                    style="background: #ECEFF1; padding: 15px; text-align: center; border-radius: 10px; margin-bottom: 15px;">
-                    <div style="font-size: 20px; font-weight: bold;">📢 "Todos fecham os olhos."</div>
-                </div>
-
                 <div id="script-list">
-                </div>
-
-                <div
-                    style="background: #FFF9C4; padding: 20px; text-align: center; border: 2px solid #FBC02D; border-radius: 10px; margin-top: 30px; margin-bottom: 50px;">
-                    <div style="font-size: 24px; font-weight: bold; color: #F57F17;">🌅 Amanhecer</div>
-                    <div style="font-size: 20px; font-weight: bold;">📢 "Todos abram os olhos!"</div>
                 </div>
 
                 <button onclick="document.getElementById('modalAjuda').style.display='flex'"
@@ -837,6 +822,12 @@
 
             document.getElementById('login-area').classList.add('hidden');
             document.getElementById('game-area').classList.remove('hidden');
+            
+
+            if (loginJogador === "NARRADOR") {
+                document.getElementById('upload-screen').classList.remove('hidden');
+                db.ref('partida/configuracao/statusLobby').set("fechado");
+            }
 
             // Fica "escutando" a entrada específica deste jogador
             db.ref('partida/jogadores/' + nome).on('value', (snapshot) => {
@@ -844,9 +835,9 @@
                 if (data && data.personagem) {
                     loginPersonagem = data.personagem; // ATRIBUIÇÃO NA VARIÁVEL GLOBAL  // NÃO TENHO O JOGADOR "NARRADOR" NO FIREBASE
                     loginEquipe = data.tipo; // ATRIBUIÇÃO NA VARIÁVEL GLOBAL
-                    document.getElementById('status-msg').innerText = "Seu Personagem:";
                     const card = document.getElementById('role-card');
                     card.classList.remove('hidden');
+                    
 
                     // Define cores baseadas no tipo
                     const cores = { "Aldeão": "#2b9453", "Minion": "#b62937", "Evil": "#e80d0d", "Forasteiro": "#2280a9" };
@@ -856,6 +847,16 @@
                     document.getElementById('role-ability').innerText = data.habilidade;
                 }
             });
+            db.ref('partida/configuracao/statusLobby').once('value').then((snapshot) => {
+            if (snapshot.val() === "aberto") {
+                console.log("Status já está aberto. Carregando dados...");
+                importarDoFirebase();
+            }
+    });
+        }
+
+        function abrirgame() {
+            db.ref('partida/configuracao/statusLobby').set("aberto");
         }
 
         // --- FUNÇÕES DE CARREGAMENTO ---
@@ -892,12 +893,20 @@
             }, (error) => {
                 console.error("Erro crítico de leitura no Firebase:", error);
             });
+            
         }
 
         // COMEÇANDO O GAME
         function startGame(data) {
-            document.getElementById('upload-screen').classList.add('hidden');
+            console.log("Aqui1")
+            document.getElementById('status-msg').classList.add('hidden');
+            console.log("Aqui2")
+            if (loginJogador === "NARRADOR") {
+                document.getElementById('upload-screen').classList.add('hidden');
+                console.log("Aqui3")
+            }
             document.getElementById('game-content').classList.remove('hidden');
+            console.log("Aqui4")
 
             // Inicializa status de vida e voto
             playersData = data.personagens_selecionados.map(p => ({
@@ -907,11 +916,15 @@
             }));
 
             rolesInPlay = playersData.map(p => p.personagem);
+            console.log("Aqui5")
             renderAdminPanel()
             if (loginJogador === "NARRADOR" || loginPersonagem === "Espião") {
+                document.getElementById('titulo-grimorio').classList.remove('hidden');
                 renderGrimoire();
             }
+            console.log("Aqui6")
             renderScript(data.num_jogadores);
+            console.log("Aqui7")
         }
 
         // 2. Renderizar Grimório
@@ -2113,80 +2126,115 @@
             const targetPlayer = selectElement.value;
             const immediateResolution = document.getElementById('immediate-kill-resolution');
 
-            const sound = document.getElementById('kill-sound');
+            if (targetPlayer) {
+                // 1. Envia para o Firebase (ajuste o caminho conforme seu banco)
+                firebase.database().ref('partida/configuracao/victimThisNight').set(targetPlayer) //SALVANDO O PERSONAGEM ATACADO PELO LOBISOMEM NO FIREBASE
+                    .then(() => {
+                        console.log("Alvo enviado com sucesso.");
 
-            // 1. Caso de nenhuma seleção
-            if (!targetPlayer) {
-                victimThisNight = null;
-                immediateResolution.innerHTML = 'Aguardando escolha do Lobisomem...';
-                immediateResolution.style.backgroundColor = '#FAFAFA';
-                immediateResolution.style.color = '#333';
-                return;
+                        const jogadorEncontrado = playersData.find(p => p.personagem === victimThisNight);
+                        if (jogadorEncontrado) {
+                            victimNameThisNight = jogadorEncontrado.jogador;
+                            firebase.database().ref('partida/configuracao/victimNameThisNight').set(victimNameThisNight)
+                        } else {
+                            victimNameThisNight = "Ninguém";
+                        }
+                        // 2. Sumir com o select
+                        // Você pode remover o elemento pai ou o próprio select
+                        selectElement.style.display = 'none';
+
+                        // Opcional: Mostrar uma mensagem de confirmação no lugar
+                        const status = document.createElement('p');
+                        // status.innerText = `Você escolheu atacar: ${victimNameThisNight}`;
+                        immediateResolution.innerHTML = `
+                    <strong>💀 ATAQUE CONFIRMADO!</strong> <br> O alvo foi ${victimNameThisNight}.`;
+                        immediateResolution.style.backgroundColor = '#D32F2F'; // Vermelho
+                        immediateResolution.style.color = 'white';
+                        selectElement.parentNode.appendChild(status);
+                    })
+                    .catch(error => console.error("Erro ao enviar escolha:", error));
             }
-
-            // Tocar o som (Movido para aqui para tocar apenas se houver um alvo selecionado)
-            if (sound) {
-                sound.currentTime = 0;
-                sound.play().catch(e => console.log("Erro ao tocar som: ", e));
-            }
-
-            // 2. Registro da Escolha do Lobisomem
-            victimThisNight = targetPlayer;
-
-            // 3. A CONDICIONAL: Comparação Imediata
-            // Se o Monge protegeu alguém (MongeProtectedPlayer não é null) E
-            // A vítima do Lobisomem é a mesma pessoa que o Monge protegeu
-            if (MongeProtectedPlayer && targetPlayer === MongeProtectedPlayer) {
-
-                // A) CASO: PROTEGIDO PELO MONGE
-
-                immediateResolution.innerHTML = `
-                <strong>🛡️ PROTEGIDO PELO MONGE!</strong> <br> A morte não ocorrerá no Amanhecer.
-            `;
-                immediateResolution.style.backgroundColor = '#2E7D32'; // Verde
-                immediateResolution.style.color = 'white';
-
-                // db.ref('partida/configuracao/victimThisNight').set(null);
-                // db.ref('partida/configuracao/victimNameThisNight').set("");
-
-            } else if (targetPlayer === "Soldado") {
-
-                // B) CASO: ALVO É O SOLDADO (IMUNE AO DEMÔNIO)
-                immediateResolution.innerHTML = `
-                <strong>🛡️ O ALVO É O SOLDADO!</strong> <br> Ele é imune ao ataque do Lobo. Ninguém morre.
-            `;
-                immediateResolution.style.backgroundColor = '#1976D2'; // Azul (para diferenciar do Monge)
-                immediateResolution.style.color = 'white';
-
-                // db.ref('partida/configuracao/victimThisNight').set(null);
-                // db.ref('partida/configuracao/victimNameThisNight').set("");
-
-            } else {
-
-                // C) CASO: MORTE CONFIRMADA
-
-                immediateResolution.innerHTML = `
-                <strong>💀 MORTE CONFIRMADA!</strong> <br> O alvo ${targetPlayer} morreu. MARCAR MORTE!
-            `;
-                immediateResolution.style.backgroundColor = '#D32F2F'; // Vermelho
-                immediateResolution.style.color = 'white';
-
-                firebase.database().ref('partida/configuracao/victimThisNight').set(targetPlayer); //SALVANDO O PERSONAGEM ATACADO PELO LOBISOMEM NO FIREBASE
-                // 2. Busca no playersData quem é o dono desse personagem
-                const jogadorEncontrado = playersData.find(p => p.personagem === victimThisNight);
-
-                // 3. Salva o nome do jogador na nossa nova variável global
-                if (jogadorEncontrado) {
-                    victimNameThisNight = jogadorEncontrado.jogador;
-                    firebase.database().ref('partida/configuracao/victimNameThisNight').set(victimNameThisNight)
-                } else {
-                    victimNameThisNight = "Ninguém";
-                }
-            }
-
-            checkGuardiãoCondition();
-
         }
+
+        // EXCLUIR - VERSÃO ANTIGA DO NARRADOR
+        // function handleKill(selectElement) {
+        //     const targetPlayer = selectElement.value;
+        //     const immediateResolution = document.getElementById('immediate-kill-resolution');
+
+        //     const sound = document.getElementById('kill-sound');
+
+        //     // 1. Caso de nenhuma seleção
+        //     if (!targetPlayer) {
+        //         victimThisNight = null;
+        //         immediateResolution.innerHTML = 'Aguardando escolha do Lobisomem...';
+        //         immediateResolution.style.backgroundColor = '#FAFAFA';
+        //         immediateResolution.style.color = '#333';
+        //         return;
+        //     }
+
+        //     // Tocar o som (Movido para aqui para tocar apenas se houver um alvo selecionado)
+        //     if (sound) {
+        //         sound.currentTime = 0;
+        //         sound.play().catch(e => console.log("Erro ao tocar som: ", e));
+        //     }
+
+        //     // 2. Registro da Escolha do Lobisomem
+        //     victimThisNight = targetPlayer;
+
+        //     // 3. A CONDICIONAL: Comparação Imediata
+        //     // Se o Monge protegeu alguém (MongeProtectedPlayer não é null) E
+        //     // A vítima do Lobisomem é a mesma pessoa que o Monge protegeu
+        //     if (MongeProtectedPlayer && targetPlayer === MongeProtectedPlayer) {
+
+        //         // A) CASO: PROTEGIDO PELO MONGE
+
+        //         immediateResolution.innerHTML = `
+        //         <strong>🛡️ PROTEGIDO PELO MONGE!</strong> <br> A morte não ocorrerá no Amanhecer.
+        //     `;
+        //         immediateResolution.style.backgroundColor = '#2E7D32'; // Verde
+        //         immediateResolution.style.color = 'white';
+
+        //         // db.ref('partida/configuracao/victimThisNight').set(null);
+        //         // db.ref('partida/configuracao/victimNameThisNight').set("");
+
+        //     } else if (targetPlayer === "Soldado") {
+
+        //         // B) CASO: ALVO É O SOLDADO (IMUNE AO DEMÔNIO)
+        //         immediateResolution.innerHTML = `
+        //         <strong>🛡️ O ALVO É O SOLDADO!</strong> <br> Ele é imune ao ataque do Lobo. Ninguém morre.
+        //     `;
+        //         immediateResolution.style.backgroundColor = '#1976D2'; // Azul (para diferenciar do Monge)
+        //         immediateResolution.style.color = 'white';
+
+        //         // db.ref('partida/configuracao/victimThisNight').set(null);
+        //         // db.ref('partida/configuracao/victimNameThisNight').set("");
+
+        //     } else {
+
+        //         // C) CASO: MORTE CONFIRMADA
+
+        //         immediateResolution.innerHTML = `
+        //         <strong>💀 MORTE CONFIRMADA!</strong> <br> O alvo ${targetPlayer} morreu. MARCAR MORTE!
+        //     `;
+        //         immediateResolution.style.backgroundColor = '#D32F2F'; // Vermelho
+        //         immediateResolution.style.color = 'white';
+
+        //         firebase.database().ref('partida/configuracao/victimThisNight').set(targetPlayer); //SALVANDO O PERSONAGEM ATACADO PELO LOBISOMEM NO FIREBASE
+        //         // 2. Busca no playersData quem é o dono desse personagem
+        //         const jogadorEncontrado = playersData.find(p => p.personagem === victimThisNight);
+
+        //         // 3. Salva o nome do jogador na nossa nova variável global
+        //         if (jogadorEncontrado) {
+        //             victimNameThisNight = jogadorEncontrado.jogador;
+        //             firebase.database().ref('partida/configuracao/victimNameThisNight').set(victimNameThisNight)
+        //         } else {
+        //             victimNameThisNight = "Ninguém";
+        //         }
+        //     }
+
+        //     checkGuardiãoCondition();
+
+        // }
 
         function checkGuardiãoCondition() {
             const stepRaven = document.getElementById('step-Guardião');
@@ -2418,67 +2466,17 @@
                 db.ref('partida/forca/emexecucao').remove();
                 db.ref('partida/configuracao/recordeVotosDia').set(0);
 
+                // Trigger do anoitcer
+                db.ref('partida/animacoes/triggerAnoitecer').set("trigger");
+
                 // 3. Muda a fase para Noite+
                 updateGamePhase('nightPlus');
+
+                setTimeout(() => {
+                    db.ref('partida/animacoes/triggerAnoitecer').remove();
+                }, 10000);
             });
         }
-
-        // function anoitecer() {
-        //     const fader = document.getElementById('fader') || criarFader();
-        //     fader.classList.add('active');
-        //     tocarAudioNoite();
-
-        //     // 1. Criar o elemento da Lua
-        //     const lua = document.createElement('div');
-        //     lua.innerHTML = "🌕🐺"; // Você pode trocar por 🌚 se preferir
-        //     lua.className = 'lua-animada';
-        //     document.body.appendChild(lua);
-
-        //     // Pequeno delay para o navegador registrar a posição inicial antes de subir
-        //     setTimeout(() => {
-        //         lua.classList.add('lua-subindo');
-        //     }, 100);
-
-        //     setTimeout(() => {
-        //         db.ref('partida').once('value').then(function (snapshot) {
-        //             const partida = snapshot.val() || {};
-        //             const jogadores = partida.jogadores || {};
-
-        //             // --- Lógica de Execução (Sua lógica original preservada) ---
-        //             const dadosExecucao = partida.forca ? partida.forca.emexecucao : null;
-        //             const listaVivos = Object.values(jogadores).filter(p => p.vivo !== false);
-        //             const maioriaNecessaria = Math.floor(listaVivos.length / 2) + 1;
-
-        //             if (dadosExecucao && dadosExecucao.nome && dadosExecucao.votos >= maioriaNecessaria) {
-        //                 const nomeDoMorto = dadosExecucao.nome;
-        //                 db.ref('partida/jogadores/' + nomeDoMorto + '/vivo').set(false);
-        //                 db.ref('partida/configuracao/ultimoExecutado').set(nomeDoMorto);
-        //                 db.ref('partida/configuracao/anuncioExecucao').set(nomeDoMorto);
-        //             } else {
-        //                 db.ref('partida/configuracao/anuncioExecucao').set("Ninguém");
-        //             }
-
-        //             // Limpezas
-        //             db.ref('partida/forca/quemJaIndicouHoje').remove();
-        //             db.ref('partida/forca/quemJaIndicadosNaRodada').remove();
-        //             db.ref('partida/forca/emexecucao').remove();
-        //             db.ref('partida/configuracao/recordeVotosDia').set(0);
-
-        //             // Muda a fase
-        //             updateGamePhase('nightPlus');
-
-        //             // 2. Tocar o áudio e remover a lua após a animação (4 segundos)
-        //             setTimeout(() => {
-        //                 // Função para o seu áudio
-        //                 lua.remove();      // Remove a lua do HTML
-
-        //                 // 3. Só agora a tela volta a aparecer (fader off)
-        //                 fader.classList.remove('active');
-        //             }, 3000);
-
-        //         });
-        //     }, 1500);
-        // }
 
         function executarAnimacaoAnoitecer() {
             const fader = document.getElementById('fader') || criarFader();
@@ -2583,12 +2581,55 @@
             }
         }
 
+        // ESTÉTICA
+        function atualizarHeaderFase(fase) {
+            const headerH1 = document.querySelector('.header h1');
+            const headerDiv = document.querySelector('.header');
+            if (!headerH1 || !headerDiv) return;
+
+            const configuracaoFases = {
+                night1: { texto: 'Roteiro: Noite 1 (Setup)', emoji: '🌙' },
+                nightPlus: { texto: 'Roteiro: Noite (Ataques)', emoji: '🌕' },
+                day: { texto: 'Roteiro: Dia (Discussão)', emoji: '☀️' },
+                execution: { texto: 'Roteiro: Dia (Execução)', emoji: '⚖️' }
+            };
+
+            const dados = configuracaoFases[fase];
+            if (!dados) return;
+
+            headerH1.textContent = `${dados.emoji} ${dados.texto}`;
+
+            if (fase.includes('night')) {
+                headerDiv.style.backgroundColor = "#283593";
+                headerDiv.style.color = "white";
+            } else {
+                headerDiv.style.backgroundColor = "#fbc02d";
+                headerDiv.style.color = "#333";
+            }
+        }
+
+
         //#region SINCRONIZAÇÕES
 
         // SINCRONIZAÇÕES
+        // Sincronizando Lobby
+        db.ref('partida/configuracao/statusLobby').on('value', (snapshot) => {
+            const status = snapshot.val();
+            
+            if (status === "aberto") {
+                importarDoFirebase();
+                
+                console.log("A partida começou!");
+            }
+        });
+
         // Sincronização da fase atual (dia, noite)
         db.ref('partida/configuracao/faseAtual').on('value', (snapshot) => {
             currentPhase = snapshot.val() || "night1";
+
+            if (currentPhase) {
+                atualizarHeaderFase(currentPhase);
+            }
 
             // Atualiza o select visualmente (caso o narrador dê F5)
             const select = document.getElementById('game-phase-select');
@@ -2700,7 +2741,14 @@
         // Sincronizando anúncio de execução
         db.ref('partida/configuracao/anuncioExecucao').on('value', function (snapshot) {
             const nomeExecutado = snapshot.val();
-            executarAnimacaoAnoitecer();
+
+            db.ref('partida/animacoes/triggerAnoitecer').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    executarAnimacaoAnoitecer();
+                    // movi para a função anoitecer do narrador, com temporizador
+                    // db.ref('partida/animacoes/triggerAnoitecer').remove();
+                }
+            });
 
             if (nomeExecutado) {
                 if (nomeExecutado === "Ninguém") {
