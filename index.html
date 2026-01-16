@@ -734,6 +734,29 @@
 
             </div>
         </div>
+
+        <div id="modal-sentenca" class="hidden"
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 11000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
+            <h1 id="sentenca-titulo" style="color: #FFD600; font-size: 2.5em; margin-bottom: 20px;">⚖️ SENTENÇA</h1>
+            <div id="sentenca-corpo" style="font-size: 1.5em; line-height: 1.4;"></div>
+            <button onclick="fecharSentenca()"
+                style="margin-top: 40px; background: #444; color: white; border: none; padding: 10px 40px; border-radius: 5px;">Prosseguir</button>
+        </div>
+
+        <div id="modal-morte-noite" class="hidden"
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 0, 0, 0.95); z-index: 11000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
+
+            <h1 id="morte-noite-titulo" style="color: #d32f2f; font-size: 2.5em; margin-bottom: 20px;">🩸 TRAGÉDIA NA
+                NOITE</h1>
+
+            <div id="morte-noite-corpo" style="font-size: 1.5em; line-height: 1.4; font-style: italic;">
+            </div>
+
+            <button onclick="fecharMorteNoite()"
+                style="margin-top: 40px; background: #d32f2f; color: white; border: none; padding: 10px 40px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                Lamentar e Prosseguir
+            </button>
+        </div>
     </div>
 
     <h1>Monitor de Sincronização</h1>
@@ -1656,7 +1679,7 @@
                     <small style="color: #7f8c8d; display: block; margin-top: 8px;">Apenas o Narrador pode encerrar a noite.</small>
                 </div>
             `);
-                    }
+            }
 
 
             if (isDay) {
@@ -2369,8 +2392,34 @@
         }
 
         function amanhecer() {
-            
             updateGamePhase("day")
+        }
+
+        function mostrarMorteNoite(victimNameThisNight) {
+            const modal = document.getElementById('modal-morte-noite');
+            const corpo = document.getElementById('morte-noite-corpo');
+            const titulo = document.getElementById('morte-noite-titulo');
+
+            if (!victimNameThisNight || victimNameThisNight === "Ninguém") {
+                titulo.innerText = "🕊️ NOITE DE PAZ";
+                titulo.style.color = "#4CAF50"; // Verde para paz
+                corpo.innerHTML = "O sol nasce e todos acordam vivos.<br>O mal não fez vítimas nesta noite.";
+            } else {
+                titulo.innerText = "🩸 TRAGÉDIA NA NOITE";
+                titulo.style.color = "#d32f2f"; // Vermelho para sangue
+                corpo.innerHTML = "Ao amanhecer, a vila descobre um corpo...<br>O jogador <span style='color: #ff5252; font-weight: bold; font-size: 1.2em;'>" + victimNameThisNight + "</span> foi brutalmente morto!";
+            }
+
+            modal.classList.remove('hidden');
+
+            // Timer opcional de 5 segundos para fechar sozinho
+            setTimeout(() => {
+                fecharMorteNoite();
+            }, 5000);
+        }
+
+        function fecharMorteNoite() {
+            document.getElementById('modal-morte-noite').classList.add('hidden');
         }
 
         // Função que o Narrador chama ao mudar o Select
@@ -2391,6 +2440,7 @@
 
                     });
                 }
+                mostrarMorteNoite(victimNameThisNight)
             }
             // RENDERIZA SCRIPT
             renderScript();
