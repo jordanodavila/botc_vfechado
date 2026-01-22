@@ -2669,6 +2669,11 @@
             }
         }
 
+        function updateGamePhase(novaFase) {
+            // ATUALIZA FIREBASE
+            db.ref('partida/configuracao/faseAtual').set(novaFase);
+        }
+
         function executarAnimacaoAnoitecer() {
             const fader = document.getElementById('fader') || criarFader();
             fader.classList.add('active');
