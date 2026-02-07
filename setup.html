@@ -516,12 +516,16 @@
           // Sanitiza o nome do jogador para evitar problemas com caracteres especiais no Firebase
           const nomeChave = p.jogador.replace(/[.#$[\]]/g, "");
 
+          // SORTEIO DA SENHA: Gera um número entre 1000 e 9999
+          const senhaSorteada = Math.floor(1000 + Math.random() * 9000).toString();
+
           updates['partida/jogadores/' + nomeChave] = {
             personagem: p.personagem,
             tipo: p.tipo,
             jogador: p.jogador,
             habilidade: p.habilidade,
-            vivo: true
+            vivo: true,
+            senha: senhaSorteada
           };
         });        
 
