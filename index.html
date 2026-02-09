@@ -186,7 +186,7 @@
         .bg-envenenador {
             background-color: #E8F5E9;
             border-left-color: #B71C1C;
-            color: #2E7D32;
+            color: #9a2d2d;
         }
 
         .bg-Espião {
@@ -451,12 +451,12 @@
                 ">🕯️ O Prólogo da Vila</div>
 
                 <div style="font-size: 20px; font-style: italic; text-align: center;">
-                    "Bem-vindos à vila de <span style="color: #d32f2f; font-weight: bold;">Millers Hollow</span>.
-                    Por gerações, vivemos em paz, mas uma maldição caiu sobre nós.
-                    Entre nós, vizinhos e amigos, escondem-se feras sedentas de sangue.
-                    O objetivo dos aldeões é descobrir e eliminar os lobisomens.
-                    O objetivo dos lobisomens é devorar a vila até que não reste mais ninguém.
-                    Que a sorte esteja com vocês."
+                    "Na pacata e isolada vila de <span style="color: #d32f2f; font-weight: bold;">Ravenswood Bluff</span>, durante um temporal terrível, um grito ecoa pela noite.<br> No centro da praça do vilarejo, sob a sombra da velha torre do relógio, os moradores se reúnem para encontrar uma cena aterrorizante: o contador da vila foi empalado nos ponteiros do relógio.<br>
+O <span style="color: #d32f2f; font-weight: bold;">sangue</span> escorre pelas engrenagens, mas o pior ainda está por vir. Entre os olhares de choque e tristeza, percebe-se a terrível verdade: <span style="color: #d32f2f; font-weight: bold;">o Demônio está entre nós</span>.<br>
+Durante o dia, ele se esconde em plena vista, vestindo a pele de um vizinho, de um amigo ou de um ente querido. Ele sussurra mentiras, semeia a discórdia e, quando o sol se põe, ele <span style="color: #d32f2f; font-weight: bold;">mata</span> novamente.
+Vocês são os cidadãos desta vila. Alguns possuem habilidades únicas, outros apenas a força de sua voz e seu voto.<br>
+Sua missão é simples, mas desesperadora: <span style="color: #d32f2f; font-weight: bold;">encontrar o mal</span> antes que não reste mais ninguém para contar a história.
+Durmam agora, cidadãos... pois a noite pertence ao Demônio.
                 </div>
 
                 <div style="
@@ -1167,10 +1167,10 @@
                     const nomeAlvo = dadosAlvo ? dadosAlvo.jogador : personagemEnvenenado;
 
                     addStep(
-                        "Envenenador", `Envenenador (${nomeRealEnvenenador})`, `<img src="${urlImagem}" style="width:35px; vertical-align:middle;">`, "bg-envenenador", `
+                        "Envenenador", `Envenenador (${nomeRealEnvenenador})`, `<img src="${urlImagem}" style="width:60px; vertical-align:middle;">`, "bg-envenenador", `
                     <div class="instruction" style="font-size: 10px;">Habilidade: Cada noite, escolha um jogador: ele estará envenenado.</div>
                     <div style="background:#4A148C; color:white; padding:10px; border-radius:5px; margin-top:10px; font-weight:bold; text-align:center;">
-                        🧪 VENENO APLICADO: ${nomeAlvo}
+                        VENENO APLICADO: ${nomeAlvo}
                     </div>
                     `);
                 }
@@ -1181,7 +1181,7 @@
                         options += `<option value="${p.personagem}">${p.jogador}</option>`;
                     });
 
-                    addStep("Envenenador", `Envenenador (${nomeRealEnvenenador})`, `<img src="${urlImagem}" style="width:35px; vertical-align:middle;">`, "bg-envenenador", `
+                    addStep("Envenenador", `Envenenador (${nomeRealEnvenenador})`, `<img src="${urlImagem}" style="width:60px; vertical-align:middle;">`, "bg-envenenador", `
                 <div class="instruction" style="font-size: 10px;">Habilidade: Cada noite, escolha um jogador: ele estará envenenado.</div>
                 <div class="instruction">📢 "Envenenador, escolha alguém para envenenar e perder a habilidade."</div>
                 <div class="instruction italic">👉 Escolha uma opção abaixo.</div>
