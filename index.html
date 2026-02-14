@@ -451,11 +451,20 @@
                 ">🕯️ O Prólogo da Vila</div>
 
                 <div style="font-size: 20px; font-style: italic; text-align: center;">
-                    "Na pacata e isolada vila de <span style="color: #d32f2f; font-weight: bold;">Ravenswood Bluff</span>, durante um temporal terrível, um grito ecoa pela noite.<br> No centro da praça do vilarejo, sob a sombra da velha torre do relógio, os moradores se reúnem para encontrar uma cena aterrorizante: o contador da vila foi empalado nos ponteiros do relógio.<br>
-                    O <span style="color: #d32f2f; font-weight: bold;">sangue</span> escorre pelas engrenagens, mas o pior ainda está por vir. Entre os olhares de choque e tristeza, percebe-se a terrível verdade: <span style="color: #d32f2f; font-weight: bold;">o Lobisomem está entre nós</span>.<br>
-                    Durante o dia, ele se esconde em plena vista, vestindo a pele de um vizinho, de um amigo ou de um ente querido. Ele sussurra mentiras, semeia a discórdia e, quando o sol se põe, ele <span style="color: #d32f2f; font-weight: bold;">mata</span> novamente.
-                    Vocês são os cidadãos desta vila. Alguns possuem habilidades únicas, outros apenas a força de sua voz e seu voto.<br>
-                    Sua missão é simples, mas desesperadora: <span style="color: #d32f2f; font-weight: bold;">encontrar o mal</span> antes que não reste mais ninguém para contar a história.
+                    "Na pacata e isolada vila de <span style="color: #d32f2f; font-weight: bold;">Ravenswood
+                        Bluff</span>, durante um temporal terrível, um grito ecoa pela noite.<br> No centro da praça do
+                    vilarejo, sob a sombra da velha torre do relógio, os moradores se reúnem para encontrar uma cena
+                    aterrorizante: o contador da vila foi empalado nos ponteiros do relógio.<br>
+                    O <span style="color: #d32f2f; font-weight: bold;">sangue</span> escorre pelas engrenagens, mas o
+                    pior ainda está por vir. Entre os olhares de choque e tristeza, percebe-se a terrível verdade: <span
+                        style="color: #d32f2f; font-weight: bold;">o Lobisomem está entre nós</span>.<br>
+                    Durante o dia, ele se esconde em plena vista, vestindo a pele de um vizinho, de um amigo ou de um
+                    ente querido. Ele sussurra mentiras, semeia a discórdia e, quando o sol se põe, ele <span
+                        style="color: #d32f2f; font-weight: bold;">mata</span> novamente.
+                    Vocês são os cidadãos desta vila. Alguns possuem habilidades únicas, outros apenas a força de sua
+                    voz e seu voto.<br>
+                    Sua missão é simples, mas desesperadora: <span style="color: #d32f2f; font-weight: bold;">encontrar
+                        o mal</span> antes que não reste mais ninguém para contar a história.
                     Durmam agora, cidadãos... pois a noite pertence ao Lobisomem.
                 </div>
 
@@ -498,6 +507,11 @@
             <div id="game-content" class="hidden">
 
                 <h2 id="status-personagem">Seu personagem</h2>
+
+                <button id="btn-revelar" onclick="revelarPersonagem()"
+                    style="padding: 10px; margin-bottom: 10px; cursor: pointer;">
+                    👁️ Ver meu personagem (10s)
+                </button>
 
                 <div id="role-card" class="card hidden">
                     <h1 id="role-name"></h1>
@@ -856,6 +870,8 @@
 
         let jogadoresFantasmasVotoGasto = {};
 
+        let timerRevelar = null;
+
         const firebaseConfig = {
             apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
             authDomain: "werewolf-877af.firebaseapp.com",
@@ -884,6 +900,13 @@
 
             if (!nome) return alert("Digite seu nome!");
             if (nome !== "NARRADOR" && !senhaDigitada) return alert("Digite sua senha!");
+
+            sessionStorage.setItem('botc_nome', nome);
+            sessionStorage.setItem('botc_senha', senhaDigitada);
+
+            //A diferença fundamental:
+            // localStorage: Persiste mesmo se você fechar a aba ou o navegador. É compartilhado entre abas do mesmo site.
+            // sessionStorage: Os dados ficam isolados por aba (tab). Se você abrir 10 abas, cada uma pode ter um login diferente e, ao dar F5, o dado permanece naquela aba específica. Se fechar a aba, o dado some.
 
             // Se for o NARRADOR, você pode pular a verificação de senha ou usar uma fixa
             if (nome === "NARRADOR") {
@@ -934,7 +957,7 @@
                     loginPersonagem = data.personagem;
                     loginEquipe = data.tipo;
                     const card = document.getElementById('role-card');
-                    card.classList.remove('hidden');
+                    // card.classList.remove('hidden');
 
                     const cores = { "Aldeão": "#2b9453", "Minion": "#b62937", "Evil": "#e80d0d", "Forasteiro": "#2280a9" };
                     card.style.background = cores[data.tipo] || "#7f8c8d";
@@ -943,6 +966,32 @@
                     document.getElementById('role-ability').innerText = data.habilidade;
                 };
             });
+        };
+
+        function revelarPersonagem() {
+            // criei um variável global timerRevelar
+            // comentei na função acima: card.classList.remove('hidden');
+
+            const card = document.getElementById('role-card');
+            const btn = document.getElementById('btn-revelar');
+
+            // 1. Mostra o card
+            card.classList.remove('hidden');
+            btn.disabled = true; // Desabilita o botão enquanto o card está visível
+            btn.innerText = "👀 Olhando...";
+
+            // 2. Se já existir um timer rodando (clique duplo), cancela o anterior
+            if (timerRevelar) {
+                clearTimeout(timerRevelar);
+            }
+
+            // 3. Define o cronômetro de 10 segundos (10000 milissegundos)
+            timerRevelar = setTimeout(() => {
+                card.classList.add('hidden');
+                btn.disabled = false; // Reabilita o botão
+                btn.innerText = "👁️ Ver meu personagem (10s)";
+                timerRevelar = null;
+            }, 10000);
         };
 
         function abrirgame() {
@@ -1140,7 +1189,7 @@
 
                 const dadosEnvenenador = playersData.find(p => p.personagem === "Envenenador");
                 const nomeRealEnvenenador = dadosEnvenenador ? dadosEnvenenador.jogador : "N/A";
-                const urlImagem = "icons/Icon_poisoner.png";                
+                const urlImagem = "icons/Icon_poisoner.png";
 
                 // CENÁRIO A: MORTO
                 if (!envenenadorVivo) {
@@ -1508,7 +1557,7 @@
                     </div>
                 `);
                 }
-                
+
             }
 
             // --- NARRADOR ---
@@ -2182,10 +2231,19 @@
 
                 // --- CENÁRIO D: HABILIDADE NORMAL ---
                 else {
+                    // let options = '<option value="">Selecione um jogador...</option>';
+                    // playersData.forEach(p => { // alterer vivos por playersData
+                    //     // Aqui usamos p.personagem como valor para o sistema checar se é Lobisomem/Decoy
+                    //     options += `<option value="${p.personagem}">${p.jogador}</option>`;
+                    // });
+
                     let options = '<option value="">Selecione um jogador...</option>';
-                    playersData.forEach(p => { // alterer vivos por playersData
-                        // Aqui usamos p.personagem como valor para o sistema checar se é Lobisomem/Decoy
-                        options += `<option value="${p.personagem}">${p.jogador}</option>`;
+                    playersData.forEach(p => {
+                        // Só adicionamos à lista se o nome do jogador (p.jogador) 
+                        // for diferente da Cartomante (nomeRealCartomante)
+                        if (p.jogador !== nomeRealCartomante) {
+                            options += `<option value="${p.personagem}">${p.jogador}</option>`;
+                        }
                     });
 
                     addAldeãoStep("Cartomante", `Cartomante (${nomeRealCartomante})`, `<img src="${urlImagem}" style="width:60px; vertical-align:middle;">`, tfColor, `
@@ -2831,6 +2889,14 @@
             const t1 = document.getElementById('ft-target-1').value;
             const t2 = document.getElementById('ft-target-2').value;
 
+            if (t1 && t2 && t1 === t2) {
+                alert("A Cartomante deve escolher dois jogadores diferentes!");
+                document.getElementById('ft-target-2').value = ""; // Reseta o segundo select
+                responseDiv.innerText = "Aguardando seleção...";
+                responseDiv.style.background = "#EEE";
+                return;
+            }
+
             // Só dispara se ambos estiverem preenchidos (evita salvar dados incompletos)
             if (t1 && t2) {
                 // const db = firebase.database();
@@ -3405,6 +3471,21 @@
                 icon.innerText = "😈🔥";
             }
         }
+
+        window.onload = function () {
+            const nomeSalvo = sessionStorage.getItem('botc_nome');
+            const senhaSalva = sessionStorage.getItem('botc_senha');
+
+            if (nomeSalvo && senhaSalva) {
+                // Preenche os campos automaticamente (opcional, para o usuário ver)
+                document.getElementById('player-name-input').value = nomeSalvo;
+                document.getElementById('player-password-input').value = senhaSalva;
+
+                // Tenta conectar automaticamente
+                console.log("Tentando reconexão automática para:", nomeSalvo);
+                conectar();
+            }
+        };
 
 
         //#region SINCRONIZAÇÕES
