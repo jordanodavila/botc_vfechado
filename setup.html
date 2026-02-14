@@ -495,11 +495,8 @@
       showMsg("Arquivo JSON baixado com sucesso!");
     }
 
-    // FIREBASE
-    let senhasSorteadas = {};
 
     function enviarParaFirebase() {
-      // Recupera os dados que foram salvos no LocalStorage durante o validateSetup
       const jogoData = JSON.parse(localStorage.getItem("setup_botc"));
 
       if (!jogoData || !jogoData.personagens_selecionados) {
@@ -507,53 +504,89 @@
         return;
       }
 
-      const updates = {};
       const jogadores = jogoData.personagens_selecionados;
 
-      // Limpa a partida anterior e salva a nova
+      // Limpa a partida anterior antes de começar o novo setup
       db.ref('partida').remove().then(() => {
+        const updates = {}; // Criamos o objeto de updates aqui dentro para garantir limpeza
+
         updates['partida/configuracao/virgemJaNomeada'] = false;
         updates['partida/configuracao/matadorJaAtirou'] = false;
         updates['partida/configuracao/app_ativo'] = true;
+        updates['partida/configuracao/statusLobby'] = "aberto";
 
+        // --- AUTOMAÇÃO LAVADEIRA ---
+        const lavadeira = jogadores.find(p => p.personagem === "Lavadeira");
+        if (lavadeira) {
+          const candidatosAldeoes = jogadores.filter(p => p.tipo === "Aldeão" && p.jogador !== lavadeira.jogador);
+          if (candidatosAldeoes.length > 0) {
+            const sorteadoReal = candidatosAldeoes[Math.floor(Math.random() * candidatosAldeoes.length)];
+            const candidatosFakes = jogadores.filter(p => p.jogador !== lavadeira.jogador && p.jogador !== sorteadoReal.jogador);
+            const sorteadoFake = candidatosFakes[Math.floor(Math.random() * candidatosFakes.length)];
+
+            updates['partida/escolhasNoite/selectedLavadeiraRole'] = sorteadoReal.personagem;
+            updates['partida/escolhasNoite/selectedLavadeiraRealPlayer'] = sorteadoReal.jogador;
+            updates['partida/escolhasNoite/selectedLavadeiraFakePlayer'] = sorteadoFake.jogador;
+          }
+        }
+
+        // --- AUTOMAÇÃO BIBLIOTECÁRIO ---
+        const bibliotecario = jogadores.find(p => p.personagem === "Bibliotecário");
+        if (bibliotecario) {
+          // 1. Filtra os Forasteiros (excluindo a si mesmo, caso o script permita)
+          const candidatosForasteiros = jogadores.filter(p => p.tipo === "Forasteiro" && p.jogador !== bibliotecario.jogador);
+
+          if (candidatosForasteiros.length > 0) {
+            const sorteadoReal = candidatosForasteiros[Math.floor(Math.random() * candidatosForasteiros.length)];
+            // 2. O Fake pode ser qualquer um, exceto o real e o próprio Bibliotecário
+            const candidatosFakes = jogadores.filter(p => p.jogador !== bibliotecario.jogador && p.jogador !== sorteadoReal.jogador);
+            const sorteadoFake = candidatosFakes[Math.floor(Math.random() * candidatosFakes.length)];
+
+            updates['partida/escolhasNoite/selectedBibliotecárioRole'] = sorteadoReal.personagem;
+            updates['partida/escolhasNoite/selectedBibliotecárioRealPlayer'] = sorteadoReal.jogador;
+            updates['partida/escolhasNoite/selectedBibliotecárioFakePlayer'] = sorteadoFake.jogador;
+          }
+        }
+
+        // --- AUTOMAÇÃO INVESTIGADOR ---
+        const investigador = jogadores.find(p => p.personagem === "Investigador");
+        if (investigador) {
+          // 1. Filtra os Minions (Minions)
+          const candidatosMinions = jogadores.filter(p => p.tipo === "Minion");
+
+          if (candidatosMinions.length > 0) {
+            const sorteadoReal = candidatosMinions[Math.floor(Math.random() * candidatosMinions.length)];
+            // 2. O Fake pode ser qualquer um, exceto o real e o Investigador
+            const candidatosFakes = jogadores.filter(p => p.jogador !== investigador.jogador && p.jogador !== sorteadoReal.jogador);
+            const sorteadoFake = candidatosFakes[Math.floor(Math.random() * candidatosFakes.length)];
+
+            updates['partida/escolhasNoite/selectedInvestigadorRole'] = sorteadoReal.personagem;
+            updates['partida/escolhasNoite/selectedInvestigadorRealPlayer'] = sorteadoReal.jogador;
+            updates['partida/escolhasNoite/selectedInvestigadorFakePlayer'] = sorteadoFake.jogador;
+          }
+        }
+
+        // --- PROCESSAMENTO DE TODOS OS JOGADORES ---
         jogadores.forEach((p) => {
-          // Sanitiza o nome do jogador para evitar problemas com caracteres especiais no Firebase
           const nomeChave = p.jogador.replace(/[.#$[\]]/g, "");
-
-          // SORTEIO DA SENHA: Gera um número entre 1000 e 9999
-          const senhaSorteada = Math.floor(1000 + Math.random() * 9000).toString();
-
-          senhasSorteadas[p.jogador] = senhaSorteada;
-
           updates['partida/jogadores/' + nomeChave] = {
             personagem: p.personagem,
             tipo: p.tipo,
             jogador: p.jogador,
             habilidade: p.habilidade,
             vivo: true,
-            senha: senhaSorteada
+            senha: ""
           };
-        });        
+        });
 
+        // ENVIO ÚNICO (ATÔMICO)
         db.ref().update(updates)
           .then(() => showMsg("🔥 Sincronizado com os celulares!"))
           .catch((err) => showMsg("Erro ao enviar: " + err, true));
-          mostrarSenhasLocalmente(senhasSorteadas);
       });
     }
 
-    function mostrarSenhasLocalmente(dicionario) {
-    const container = document.getElementById("lista-senhas");
-    container.innerHTML = "";
 
-    Object.entries(dicionario).forEach(([nome, senha]) => {
-        const div = document.createElement("div");
-        div.textContent = `${nome}: ${senha}`;
-        container.appendChild(div);
-    });
-  }
-
-    
   </script>
 
 </body>
