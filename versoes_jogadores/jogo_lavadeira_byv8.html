@@ -1199,7 +1199,7 @@
             // Region [RENDER SCRIPT: MONGE] removida para segurança do jogo.
 
             // Region [RENDER SCRIPT: LOBISOMEM] removida para segurança do jogo.
-            
+
             // Region [RENDER SCRIPT: PREFEITO] removida para segurança do jogo.
 
             // Region [RENDER SCRIPT: ESPIÃO] removida para segurança do jogo.
@@ -1993,20 +1993,43 @@
             }
         }
 
-        window.onload = function () {
+        //#region SISTEMA: AUTO-LOGIN (PORTÃO) TODOS
+        function tentarAutoLogin() {
             const nomeSalvo = sessionStorage.getItem('botc_nome');
             const senhaSalva = sessionStorage.getItem('botc_senha');
 
-            if (nomeSalvo && senhaSalva) {
-                // Preenche os campos automaticamente (opcional, para o usuário ver)
-                document.getElementById('player-name-input').value = nomeSalvo;
-                document.getElementById('player-password-input').value = senhaSalva;
-
-                // Tenta conectar automaticamente
-                console.log("Tentando reconexão automática para:", nomeSalvo);
-                conectar();
+            // Se não há nada no "pedágio", mostra a tela de login e encerra
+            if (!nomeSalvo || !senhaSalva) {
+                const loginArea = document.getElementById('login-area');
+                if (loginArea) loginArea.style.display = 'block';
+                return;
             }
-        };
+
+            const campoNome = document.getElementById('player-name-input');
+            const campoSenha = document.getElementById('player-password-input');
+
+            // 1. Verifica se os inputs já existem no HTML
+            if (campoNome && campoSenha) {
+                campoNome.value = nomeSalvo;
+                campoSenha.value = senhaSalva;
+
+                // 2. Verifica se a função conectar já está disponível (Firebase pronto)
+                if (typeof conectar === "function") {
+                    console.log("Auto-login: Inputs e Função prontos. Conectando...");
+                    conectar();
+                } else {
+                    // Se a função não existe ainda, espera 100ms e tenta de novo
+                    setTimeout(tentarAutoLogin, 100);
+                }
+            } else {
+                // Se os inputs ainda não apareceram, espera 50ms e tenta de novo
+                setTimeout(tentarAutoLogin, 50);
+            }
+        }
+
+        // Inicia a verificação imediatamente
+        tentarAutoLogin();
+        //#endregion
 
 
         // SINCRONIZAÇÕES
