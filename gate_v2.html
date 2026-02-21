@@ -12,9 +12,14 @@
             color: white;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            /* Altera de center para flex-start para o conteúdo começar no topo se for grande */
+            align-items: flex-start;
+            /* Altera de height para min-height para permitir que a página cresça */
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            /* Garante um respiro nas bordas */
+            box-sizing: border-box;
         }
 
         .login-container {
@@ -23,9 +28,12 @@
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             text-align: center;
-            width: 90%;
+            width: 100%;
+            /* Ocupa a largura disponível */
             max-width: 400px;
             border: 1px solid #0f3460;
+            /* Adiciona uma margem automática para centralizar verticalmente quando houver espaço */
+            margin: auto;
         }
 
         h1 {
