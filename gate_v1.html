@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOTC - Portal de Entrada</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #0f3460;
+        }
+        h1 { color: #e94560; margin-bottom: 10px; }
+        p { color: #888; font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: none;
+            background: #0f3460;
+            color: white;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #c62842; }
+        .status { margin-top: 15px; font-size: 12px; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1>🕯️ Ravenswood</h1>
+        <p>Identifique-se para entrar na vila</p>
+        
+        <input type="text" id="player-name-input" placeholder="SEU NOME">
+        <input type="password" id="player-password-input" placeholder="SUA SENHA">
+        
+        <button onclick="conectar()">Entrar no Jogo</button>
+        
+        <div id="conn-status" class="status">Conectando ao Firebase...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
+            authDomain: "werewolf-877af.firebaseapp.com",
+            projectId: "werewolf-877af",
+            databaseURL: "https://werewolf-877af-default-rtdb.firebaseio.com",
+            storageBucket: "werewolf-877af.appspot.com",
+            appId: "1:177329283782:web:30a6c6cf8732df0f802dc7"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function conectar() {
+            const nome = document.getElementById('player-name-input').value.trim().toUpperCase();
+            const senhaDigitada = document.getElementById('player-password-input').value.trim();
+
+            if (!nome || !senhaDigitada) return alert("Preencha nome e senha!");
+
+            const status = document.getElementById('conn-status');
+            status.innerText = "Verificando credenciais...";
+
+            db.ref('partida/jogadores/' + nome).once('value').then((snapshot) => {
+                const data = snapshot.val();
+
+                if (!data) {
+                    alert("Jogador não encontrado!");
+                    status.innerText = "";
+                    return;
+                }
+
+                // Lógica de senha (Primeiro acesso ou validação)
+                if (!data.senha || data.senha === "") {
+                    db.ref('partida/jogadores/' + nome + '/senha').set(senhaDigitada).then(() => {
+                        irParaJogo(nome, senhaDigitada, data.url_pessoal);
+                    });
+                } else if (data.senha === senhaDigitada) {
+                    irParaJogo(nome, senhaDigitada, data.url_pessoal);
+                } else {
+                    alert("Senha incorreta!");
+                    status.innerText = "";
+                }
+            });
+        }
+
+        function irParaJogo(nome, senha, url) {
+            if (!url) {
+                alert("O Narrador ainda não gerou sua URL segura!");
+                return;
+            }
+
+            // Guarda o carimbo na mochila (sessionStorage)
+            sessionStorage.setItem('botc_nome', nome);
+            sessionStorage.setItem('botc_senha', senha);
+
+            // Redireciona para o link gerado pelo Python
+            window.location.href = url;
+        }
+
+        // Monitor de conexão simples
+        db.ref(".info/connected").on("value", (snap) => {
+            const s = document.getElementById("conn-status");
+            if (snap.val() === true) {
+                s.innerText = "Sincronizado com o Grimório";
+                s.style.color = "#2ecc71";
+            } else {
+                s.innerText = "Offline";
+                s.style.color = "#e74c3c";
+            }
+        });
+    </script>
+</body>
+</html>
