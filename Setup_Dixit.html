@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dixit – Setup MVP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f9;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #5D4037;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .btn-start {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .btn-reset {
+      background-color: #f44336;
+      color: white;
+    }
+
+    #status {
+      margin-top: 15px;
+      padding: 10px;
+      text-align: center;
+      border-radius: 5px;
+      display: none;
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+
+  <div class="container">
+    <h2>Dixit Setup - Etapa 1</h2>
+
+    <label>Nomes dos Jogadores (um por linha):</label>
+    <textarea id="listaNomes" rows="8" placeholder="João&#10;Maria&#10;Pedro&#10;Ana"></textarea>
+
+    <button class="btn-start" onclick="iniciarPartidaDixit()">🚀 Iniciar Partida e Sortear Narrador</button>
+    <button class="btn-reset" onclick="resetarFirebase()">🗑️ Resetar Banco</button>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    // Sua configuração do Firebase (mantida do BOTC)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
+      authDomain: "werewolf-877af.firebaseapp.com",
+      projectId: "werewolf-877af",
+      storageBucket: "werewolf-877af.firebasestorage.app",
+      messagingSenderId: "177329283782",
+      appId: "1:177329283782:web:30a6c6cf8732df0f802dc7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function showMsg(msg, isError = false) {
+      const s = document.getElementById("status");
+      s.innerText = msg;
+      s.style.display = "block";
+      s.style.background = isError ? "#ffcdd2" : "#c8e6c9";
+      s.style.color = isError ? "#b71c1c" : "#2e7d32";
+    }
+
+    // Função para simular o sorteio de cartas (Etapa 1: apenas IDs numéricos)
+    function gerarMaoInicial() {
+      let mao = [];
+      while (mao.length < 6) {
+        //let carta = Math.floor(Math.random() * 100) + 1; // Cartas de 1 a 100
+        let carta = Math.floor(Math.random() * 180) + 1; // Cartas de 1 a 180
+        if (!mao.includes(carta)) mao.push(carta);
+      }
+      return mao;
+    }
+
+    async function iniciarPartidaDixit() {
+      const texto = document.getElementById("listaNomes").value.trim();
+      if (!texto) return showMsg("Insira nomes!", true);
+
+      const nomes = texto.split('\n').map(n => n.trim()).filter(n => n !== "");
+      if (nomes.length < 3) return showMsg("Mínimo de 3 jogadores!", true);
+
+      showMsg("Iniciando...");
+
+      // 1. Sortear o Narrador
+      const indiceNarrador = Math.floor(Math.random() * nomes.length);
+      const narradorSorteado = nomes[indiceNarrador];
+
+      // 2. Criar Objeto de Atualização (Baseado na sua lógica do BOTC)
+      const updates = {};
+
+      // Configurações globais da partida
+      updates['dixit/status'] = "ESCOLHA_NARRADOR";
+      updates['dixit/narrador_atual'] = narradorSorteado.trim().toUpperCase();
+      updates['dixit/frase_rodada'] = "";
+
+      // Criar cada jogador no banco
+      nomes.forEach(nome => {
+        const nomeLimpo = nome.trim().toUpperCase();
+        const nomeChave = nomeLimpo.replace(/[.#$[\]]/g, "");
+
+        updates['dixit/jogadores/' + nomeChave] = {
+          nome: nomeChave,
+          pontos: 0,
+          cartas: gerarMaoInicial(),
+          isNarrador: (nome === narradorSorteado),
+          senha: "", // Preparado para o login individual
+          escolhaRodada: "" // Dica: adicione isso para saber qual carta ele jogou na mesa depois
+        };
+      });
+
+      // 3. Enviar para o Firebase (Limpando o nó 'dixit' antes)
+      try {
+        await db.ref('dixit').remove(); // Garante que a partida anterior sumiu
+        await db.ref().update(updates);
+        showMsg(`Sucesso! Narrador: ${narradorSorteado}`);
+      } catch (e) {
+        showMsg("Erro: " + e.message, true);
+      }
+    }
+
+    function resetarFirebase() {
+      if (confirm("Deseja apagar os dados do Dixit?")) {
+        db.ref('dixit').remove()
+          .then(() => showMsg("Dados apagados."))
+          .catch(e => showMsg("Erro ao apagar", true));
+      }
+    }
+  </script>
+
+</body>
+
+</html>

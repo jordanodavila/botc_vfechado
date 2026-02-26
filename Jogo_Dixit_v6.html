@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dixit Online - MVP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: #34495e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            color: #ecf0f1;
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #2ecc71;
+        }
+
+        /* Estilo para as Cartas */
+        .mao-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .carta {
+            background: #ecf0f1;
+            color: #2c3e50;
+            width: 80px;
+            height: 120px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            border: 3px solid transparent;
+            cursor: pointer;
+        }
+
+        .carta:hover {
+            transform: scale(1.05);
+            border-color: #f1c40f;
+        }
+
+        .carta-selecionada {
+            transform: scale(1.05);
+            border-color: #f1c40f !important;
+            box-shadow: 0 0 15px #f1c40f;
+        }
+
+        /* Classe para destacar a carta selecionada pelo Narrador/Jogador */
+        .selected {
+            border: 4px solid #4CAF50 !important;
+            transform: scale(1.05);
+        }
+
+        .info-jogador {
+            background: #1a252f;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .carta {
+            width: 120px;
+            height: 180px;
+            border-radius: 8px;
+            border: 3px solid #fff;
+            cursor: pointer;
+            overflow: hidden;
+            /* Garante que a imagem não saia da borda */
+            transition: transform 0.2s, border-color 0.2s;
+            background-color: #444;
+            /* Fundo caso a imagem falhe */
+        }
+
+        .carta img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Ajusta a imagem sem esticá-la */
+        }
+
+        #btn-confirmar-jogada {
+            margin-top: 30px;
+            /* Aumente ou diminua esse valor conforme o gosto */
+            display: block;
+            /* Garante que a margem funcione corretamente */
+            width: 100%;
+            /* Mantém a largura total se desejar */
+        }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="login-area">
+            <h1>Dixit</h1>
+            <p>Digite seu nome (igual ao cadastro)</p>
+            <input type="text" id="player-name-input" placeholder="Nome do Jogador">
+            <input type="password" id="player-password-input" placeholder="Sua senha">
+            <button onclick="conectar()">Entrar no Jogo</button>
+        </div>
+
+        <div id="game-area" class="hidden">
+
+            <div class="info-jogador">
+                <h2 id="display-nome">---</h2>
+                <p id="display-status">Aguardando...</p>
+                <div id="display-frase-rodada" class="hidden"
+                    style="background: #f1c40f; color: #2c3e50; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                </div>
+                <p>Pontos: <span id="display-pontos">0</span></p>
+            </div>
+
+            <div id="minha-mao-container">
+                <h3>Sua Mão:</h3>
+                <div id="minha-mao" class="mao-container"></div>
+            </div>
+
+            <div id="mesa-votacao-container" class="hidden">
+                <h3>Escolha a carta do Narrador:</h3>
+                <div id="cartas-na-mesa" class="mao-container"></div>
+            </div>
+
+            <div id="painel-narrador" class="hidden">
+                <h3>🎨 Você é o Narrador!</h3>
+                <p>Escolha uma carta acima e digite a frase:</p>
+                <input type="text" id="frase-input" placeholder="Digite a frase aqui...">
+                <p id="carta-selecionada-txt" style="font-weight: bold; color: #f1c40f;">Nenhuma carta selecionada</p>
+
+            </div>
+
+            <button id="btn-confirmar-jogada" onclick="confirmarSelecao()" style="margin-top: 30px;">
+                Confirmar Jogada
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Modal de Resultados da Rodada -->
+    <div id="modal-pontuacao" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1010; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+        <div
+            style="background: #34495e; padding: 20px; border-radius: 15px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+            <h2 style="color: #f1c40f;">Resultados da Rodada</h2>
+            <div id="resultados-rodada-container" style="text-align: left; margin-bottom: 20px;">
+                <!-- Os resultados serão inseridos aqui via JS -->
+            </div>
+            <button id="btn-proxima-rodada" class="hidden" onclick="iniciarProximaRodada()">Próxima Rodada</button>
+            <button id="btn-fechar-resultados" class="hidden" onclick="fecharModalPontuacao()" style="background: #7f8c8d; margin-top: 10px; padding: 10px;">Fechar Resultados</button>
+        </div>
+    </div>
+
+    <!-- Modal Fim de Jogo -->
+    <div id="modal-fim-jogo" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1020; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <h1 style="color: #f1c40f; font-size: 3em; margin-bottom: 20px;">FIM DE JOGO!</h1>
+        <h2 id="texto-vencedor" style="color: white; font-size: 2em;"></h2>
+        <p style="color: #bdc3c7; margin-top: 20px;">Parabéns!</p>
+        <button onclick="location.reload()" style="background: #27ae60; margin-top: 30px; max-width: 200px; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">Sair</button>
+    </div>
+
+    <!-- Modal de Zoom de Carta -->
+    <div id="modal-zoom" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="width: 80%; max-width: 300px; margin-bottom: 20px;">
+            <img id="img-zoom" src="" style="width: 100%; border-radius: 15px; border: 3px solid white;">
+        </div>
+
+        <div style="display: flex; gap: 20px; width: 80%; max-width: 300px;">
+            <button id="btn-modal-selecionar" onclick="marcarComoSelecionada()" style="background: #f1c40f; color: #2c3e50; border: none; padding: 15px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer;">Selecionar esta</button>
+            <button id="btn-modal-votar" onclick="confirmarVoto()" class="hidden" style="background: #2980b9; color: white; border: none; padding: 15px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer;">Votar nesta!</button>
+            <button onclick="fecharModal()"
+                style="background: #c0392b; color: white; border: none; padding: 15px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer;">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        let cartaSelecionadaFinal = null;
+        let donoDaCartaVotada = null;
+        let cartaTemporaria = null;
+        let isProcessing = false; // Trava para evitar race conditions
+
+        //#region CONEXÃO
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
+            authDomain: "werewolf-877af.firebaseapp.com",
+            projectId: "werewolf-877af",
+            storageBucket: "werewolf-877af.firebasestorage.app",
+            messagingSenderId: "177329283782",
+            appId: "1:177329283782:web:30a6c6cf8732df0f802dc7"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let loginJogador = "";
+
+        // --- FUNÇÃO DE CONEXÃO ---
+        function conectar() {
+            // Normalizamos para a chave do Firebase (sem pontos, etc)
+            const nomeInput = document.getElementById('player-name-input').value.trim();
+            const nomeChave = nomeInput.toUpperCase().replace(/[.#$[\]]/g, "");
+            const senhaDigitada = document.getElementById('player-password-input').value.trim();
+
+            if (!nomeInput) return alert("Digite seu nome!");
+            if (!senhaDigitada) return alert("Digite sua senha!");
+
+            // Busca o jogador no nó 'dixit/jogadores'
+            db.ref('dixit/jogadores/' + nomeChave).once('value').then((snapshot) => {
+                const data = snapshot.val();
+
+                if (!data) {
+                    alert("Jogador não cadastrado no Setup!");
+                    return;
+                }
+
+                // Lógica de Senha (conforme seu modelo)
+                if (!data.senha || data.senha === "") {
+                    // Primeiro acesso: grava a senha
+                    db.ref('dixit/jogadores/' + nomeChave + '/senha').set(senhaDigitada)
+                        .then(() => {
+                            alert("Senha cadastrada para este dispositivo!");
+                            prosseguirLogin(nomeChave, data);
+                        });
+                } else if (data.senha === senhaDigitada) {
+                    // Senha correta
+                    prosseguirLogin(nomeChave, data);
+                } else {
+                    alert("Senha incorreta!");
+                }
+            });
+        }
+
+        function prosseguirLogin(nomeChave, dadosIniciais) {
+            loginJogador = nomeChave;
+
+            // Salva na sessão do navegador
+            sessionStorage.setItem('dixit_nome', nomeChave);
+
+            // UI: Troca de tela
+            document.getElementById('login-area').classList.add('hidden');
+            document.getElementById('game-area').classList.remove('hidden');
+
+            document.getElementById('display-nome').innerText = dadosIniciais.nome;
+
+            // Ativa o ouvinte em tempo real para as cartas e pontos
+            ativarListenerJogador(nomeChave);
+            ativarListenerGlobal();
+        }
+
+        function ativarListenerJogador(nomeChave) {
+            db.ref('dixit/jogadores/' + nomeChave).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                // Atualiza Pontos
+                document.getElementById('display-pontos').innerText = data.pontos;
+
+                // Atualiza Status (Narrador ou não)
+                const statusTxt = data.isNarrador ? "🎨 VOCÊ É O NARRADOR" : "🕵️ Escolha uma carta que combine";
+                document.getElementById('display-status').innerText = statusTxt;
+
+                // Atualiza as Cartas na tela
+                renderizarCartas(data.cartas);
+            });
+        }
+        //#endregion
+
+        //#region RODADA1
+        function renderizarCartas(cartas) {
+            const container = document.getElementById('minha-mao');
+            container.innerHTML = "";
+
+            // Verifica se há cartas (evita erro se o nó estiver vazio no Firebase)
+            if (!cartas || !Array.isArray(cartas)) return;
+
+            cartas.forEach(idCarta => {
+                const div = document.createElement('div');
+                div.className = 'carta';
+                div.dataset.carta = idCarta;
+
+                // Cria o elemento da imagem
+                const img = document.createElement('img');
+
+                // Caminho relativo: pasta "cartas" + ID + extensão
+                img.src = `cartas/${idCarta}.png`;
+
+                // Estilo para a imagem preencher a div da carta
+                img.style.width = "100%";
+                img.style.height = "100%";
+                img.style.objectFit = "cover";
+                img.style.borderRadius = "8px";
+
+                // Caso a imagem não seja encontrada, mostra o número como fallback
+                img.onerror = function () {
+                    this.style.display = 'none';
+                    div.innerText = idCarta;
+                    div.style.display = "flex";
+                    div.style.alignItems = "center";
+                    div.style.justifyContent = "center";
+                    div.style.background = "#ddd";
+                };
+
+                div.onclick = () => selecionarCarta(idCarta);
+
+                div.appendChild(img);
+                container.appendChild(div);
+            });
+        }
+
+        function selecionarCarta(id) {
+            cartaTemporaria = id;
+            const modal = document.getElementById('modal-zoom');
+            const imgZoom = document.getElementById('img-zoom');
+
+            // Controla os botões do modal
+            document.getElementById('btn-modal-selecionar').classList.remove('hidden');
+            document.getElementById('btn-modal-votar').classList.add('hidden');
+
+
+            // Define a imagem baseada na sua pasta local
+            imgZoom.src = `cartas/${id}.png`;
+
+            // Exibe o modal usando flex para centralizar
+            modal.style.display = "flex";
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('modal-zoom');
+            modal.style.display = "none";
+            cartaTemporaria = null;
+            donoDaCartaVotada = null;
+
+            // Garante que os botões voltem ao estado padrão
+            document.getElementById('btn-modal-selecionar').classList.remove('hidden');
+            document.getElementById('btn-modal-votar').classList.add('hidden');
+        }
+
+        function marcarComoSelecionada() {
+            // 1. Guarda o ID da carta vindo do zoom
+            cartaSelecionadaFinal = cartaTemporaria;
+
+            // 2. Remove o destaque de qualquer outra carta antes
+            document.querySelectorAll('#minha-mao .carta').forEach(img => {
+                img.classList.remove('carta-selecionada');
+            });
+
+            // 3. Aplica o destaque visual na carta clicada (na mão do jogador)
+            // Supondo que suas imagens tenham um atributo data-id ou id único
+            const cartaNaMao = document.querySelector(`.carta[data-carta="${cartaSelecionadaFinal}"]`);
+            if (cartaNaMao) {
+                cartaNaMao.classList.add('carta-selecionada');
+            }
+
+            // 4. Atualiza o texto de feedback
+            document.getElementById('carta-selecionada-txt').innerText = "Carta selecionada: " + cartaSelecionadaFinal;
+
+            fecharModal();
+        }
+        
+
+        function confirmarSelecao() {
+            // Validação inicial: selecionou carta?
+            if (!cartaSelecionadaFinal) {
+                alert("Por favor, selecione uma carta primeiro clicando nela.");
+                return;
+            }
+
+            const inputFrase = document.getElementById('frase-input');
+            const idParaRemover = cartaSelecionadaFinal;
+
+            db.ref('dixit').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                const status = data.status;
+                const jogadorData = data.jogadores[loginJogador];
+                const updates = {};
+
+                if (jogadorData.escolhaRodada) {
+                    alert("Você já enviou uma carta nesta rodada!");
+                    return;
+                }
+
+                // --- LÓGICA DO NARRADOR ---
+                if (status === "ESCOLHA_NARRADOR") {
+                    if (!jogadorData.isNarrador) {
+                        alert("Aguarde o narrador!");
+                        return;
+                    }
+
+                    // PEGA A FRASE DO INPUT HTML
+                    const frase = inputFrase.value;
+                    if (!frase || frase.trim() === "") {
+                        alert("Você precisa digitar uma frase para a rodada!");
+                        inputFrase.focus();
+                        return;
+                    }
+
+                    updates['frase_rodada'] = frase.toUpperCase();
+                    updates['status'] = "ESCOLHA_JOGADORES";
+                    updates['mesa/NARRADOR'] = {
+                        carta: idParaRemover,
+                        donoReal: loginJogador,
+                        votos: 0
+                    };
+                }
+                // --- LÓGICA DO JOGADOR COMUM ---
+                else if (status === "ESCOLHA_JOGADORES") {
+                    updates['mesa/' + loginJogador] = {
+                        carta: idParaRemover,
+                        donoReal: loginJogador,
+                        votos: 0
+                    };
+                }
+
+                // --- ATUALIZAÇÃO DA MÃO ---
+                const cartasAtuais = jogadorData.cartas || [];
+                const novasCartas = cartasAtuais.filter(c => c != idParaRemover);
+
+                updates['jogadores/' + loginJogador + '/cartas'] = novasCartas;
+                updates['jogadores/' + loginJogador + '/escolhaRodada'] = idParaRemover;
+
+                return db.ref('dixit').update(updates);
+
+            }).then((result) => {
+                if (result !== undefined) {
+                    alert("Jogada confirmada!");
+                    cartaSelecionadaFinal = null;
+                    inputFrase.value = ""; // Limpa o campo
+                    document.getElementById('carta-selecionada-txt').innerText = "Nenhuma carta selecionada";
+                }
+            }).catch(err => console.error("Erro:", err));
+        }
+
+        //#endregion
+
+        function renderizarMesaVotacao(mesaData) {
+            const container = document.getElementById('cartas-na-mesa');
+            if (!container) return;
+            container.innerHTML = "";
+
+            // Convertemos o objeto mesa (que tem chaves como 'NARRADOR' ou 'JOAO') em um Array
+            const itensDaMesa = Object.values(mesaData);
+
+            itensDaMesa.forEach(item => {
+                // REGRA DIXIT: Não mostrar a própria carta para o jogador votar
+                if (item.donoReal === loginJogador) {
+                    return; // Pula a renderização da carta do próprio jogador
+                }
+
+                const div = document.createElement('div');
+                div.className = 'carta';
+                div.dataset.cartaId = item.carta; // ID da imagem
+                div.dataset.dono = item.donoReal; // Quem jogou (para o voto)
+
+                const img = document.createElement('img');
+                img.src = `cartas/${item.carta}.png`;
+                img.style.width = "100%";
+                img.style.height = "100%";
+                img.style.objectFit = "cover";
+                img.style.borderRadius = "8px";
+
+                // Fallback caso a imagem não carregue
+                img.onerror = function () {
+                    this.style.display = 'none';
+                    div.innerText = "Carta " + item.carta;
+                    div.style.display = "flex";
+                    div.style.alignItems = "center";
+                    div.style.justifyContent = "center";
+                    div.style.background = "#555";
+                };
+
+                // Ao clicar, abre o zoom para confirmar o voto
+                div.onclick = () => abrirZoomVotacao(item.carta, item.donoReal);
+
+                div.appendChild(img);
+                container.appendChild(div);
+            });
+        }
+
+        function ativarListenerGlobal() {
+            db.ref('dixit').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || !loginJogador) return;
+
+                const jogadorData = data.jogadores[loginJogador];
+                const fraseArea = document.getElementById('display-frase-rodada');
+                const painelNarrador = document.getElementById('painel-narrador');
+                const maoContainer = document.getElementById('minha-mao-container');
+                const displayStatus = document.getElementById('display-status');
+                const mesaVotacaoContainer = document.getElementById('mesa-votacao-container');
+
+                // 1. Atualiza a Frase da Rodada
+                if (data.frase_rodada && data.frase_rodada !== "") {
+                    fraseArea.innerHTML = `<h2 style="margin:0">Frase: "${data.frase_rodada}"</h2>`;
+                    fraseArea.classList.remove('hidden');
+                } else {
+                    fraseArea.classList.add('hidden');
+                }
+
+                // 2. Controle de Interface (Painel do Narrador)
+                if (jogadorData.isNarrador && data.status === "ESCOLHA_NARRADOR") {
+                    painelNarrador.classList.remove('hidden');
+                    displayStatus.innerText = "Sua vez de narrar!";
+                } else {
+                    painelNarrador.classList.add('hidden');
+                }
+
+                // 3. Lógica de UI baseada no Status do Jogo
+                // Esconde tudo por padrão para evitar mostrar a UI errada
+                maoContainer.classList.add('hidden');
+                mesaVotacaoContainer.classList.add('hidden');
+                document.getElementById('btn-confirmar-jogada').classList.add('hidden');
+
+                if (jogadorData.escolhaRodada) { // Jogador já fez sua jogada na rodada
+                    maoContainer.classList.add('hidden');
+                } else { // Jogador ainda não jogou
+                    if (data.status === "ESCOLHA_JOGADORES" || (data.status === "ESCOLHA_NARRADOR" && jogadorData.isNarrador)) {
+                        maoContainer.classList.remove('hidden');
+                        document.getElementById('btn-confirmar-jogada').classList.remove('hidden');
+                        if (!jogadorData.isNarrador) displayStatus.innerText = "Escolha uma carta para a frase abaixo!";
+                    } else {
+                        maoContainer.classList.add('hidden');
+                        displayStatus.innerText = "Aguardando o narrador definir a frase...";
+                    }
+                }
+
+                // Lógica de Status
+                const mesaData = data.mesa || {};
+                const jogadoresData = data.jogadores || {};
+                const totalJogadores = Object.keys(jogadoresData).length;
+                const cartasNaMesa = Object.keys(mesaData).length;
+
+                // Transição para VOTAÇÃO
+                if (data.status === "ESCOLHA_JOGADORES" && cartasNaMesa === totalJogadores) {
+                    db.ref('dixit/status').set("VOTACAO");
+                }
+
+                // Fase de VOTAÇÃO
+                if (data.status === "VOTACAO") {
+                    document.getElementById('btn-confirmar-jogada').classList.add('hidden');
+                    maoContainer.classList.add('hidden');
+
+                    if (jogadorData.isNarrador) {
+                        displayStatus.innerText = "Os jogadores estão votando na sua frase...";
+                    } else if (jogadorData.votouEm) {
+                        displayStatus.innerText = "Voto computado! Aguardando os outros...";
+                    } else {
+                        mesaVotacaoContainer.classList.remove('hidden');
+                        displayStatus.innerText = "Qual dessas é a carta do Narrador?";
+                        renderizarMesaVotacao(data.mesa);
+                    }
+
+                    // Transição para PONTUACAO (feita pelo narrador para evitar race condition)
+                    const totalVotos = Object.values(jogadoresData).filter(j => j.votouEm).length;
+                    if (jogadorData.isNarrador && !isProcessing && totalVotos === totalJogadores - 1) {
+                        isProcessing = true;
+                        calcularEAtualizarPontuacao(data);
+                    }
+                }
+
+                // Fase de PONTUACAO
+                if (data.status === "PONTUACAO") {
+                    displayStatus.innerText = "Rodada finalizada! Verificando os pontos...";
+                    if (data.resultados_rodada) {
+                        exibirResultados(data.resultados_rodada, data.narrador_atual, jogadorData.isNarrador);
+                    }
+                }
+
+                // Fase de FIM DE JOGO
+                if (data.status === "FIM_JOGO") {
+                    document.getElementById('modal-fim-jogo').style.display = 'flex';
+                    document.getElementById('texto-vencedor').innerText = "Vencedor: " + (data.vencedor || "Alguém");
+                }
+
+
+            });
+        }
+
+        function abrirZoomVotacao(cartaId, donoDaCarta) {
+            donoDaCartaVotada = donoDaCarta;
+
+            const modal = document.getElementById('modal-zoom');
+            const imgZoom = document.getElementById('img-zoom');
+
+            // Controla os botões: esconde o de confirmar carta e mostra o de votar
+            document.getElementById('btn-modal-selecionar').classList.add('hidden');
+            document.getElementById('btn-modal-votar').classList.remove('hidden');
+
+            imgZoom.src = `cartas/${cartaId}.png`;
+            modal.style.display = "flex";
+        }
+
+        function confirmarVoto() {
+            if (!donoDaCartaVotada || isProcessing) return;
+
+            db.ref(`dixit/jogadores/${loginJogador}/votouEm`).once('value').then(snap => {
+                if (snap.exists() && snap.val()) {
+                    alert("Você já votou nesta rodada!");
+                    fecharModal();
+                    return;
+                }
+
+                isProcessing = true;
+                db.ref('dixit').once('value').then((snapshot) => {
+                    const data = snapshot.val();
+                    const updates = {};
+                    let chaveMesa = "";
+
+                    for (let chave in data.mesa) {
+                        if (data.mesa[chave].donoReal === donoDaCartaVotada) {
+                            chaveMesa = chave;
+                            break;
+                        }
+                    }
+
+                    if (chaveMesa) {
+                        const votosAtuais = data.mesa[chaveMesa].votos || 0;
+                        updates[`mesa/${chaveMesa}/votos`] = votosAtuais + 1;
+                        updates[`jogadores/${loginJogador}/votouEm`] = donoDaCartaVotada;
+
+                        return db.ref('dixit').update(updates);
+                    }
+                }).then(() => {
+                    alert("Voto computado!");
+                    fecharModal();
+                    isProcessing = false;
+                }).catch(err => {
+                    console.error("Erro ao votar:", err);
+                    isProcessing = false;
+                });
+            });
+        }
+
+        function calcularEAtualizarPontuacao(data) {
+            const updates = {};
+            const resultados = {};
+            const narradorKey = data.narrador_atual;
+            const totalVotantes = Object.keys(data.jogadores).length - 1;
+            const votosNoNarrador = data.mesa['NARRADOR'].votos || 0;
+
+            // Inicializa resultados e pontos
+            for (const jogadorKey in data.jogadores) {
+                resultados[jogadorKey] = { pontosGanhos: 0, motivo: '' };
+            }
+
+            // Cenário 1: Todos ou ninguém acertou a carta do narrador
+            if (votosNoNarrador === 0 || votosNoNarrador === totalVotantes) {
+                resultados[narradorKey].motivo = "Ninguém ou todos acertaram sua carta.";
+                for (const jogadorKey in data.jogadores) {
+                    if (jogadorKey !== narradorKey) {
+                        updates[`jogadores/${jogadorKey}/pontos`] = (data.jogadores[jogadorKey].pontos || 0) + 2;
+                        resultados[jogadorKey] = { pontosGanhos: 2, motivo: 'Bônus por todos/ninguém acertar.' };
+                    }
+                }
+            }
+            // Cenário 2: Alguns acertaram
+            else {
+                updates[`jogadores/${narradorKey}/pontos`] = (data.jogadores[narradorKey].pontos || 0) + 3;
+                resultados[narradorKey] = { pontosGanhos: 3, motivo: 'Alguns jogadores acertaram sua carta!' };
+
+                for (const jogadorKey in data.jogadores) {
+                    if (jogadorKey !== narradorKey && data.jogadores[jogadorKey].votouEm === narradorKey) {
+                        updates[`jogadores/${jogadorKey}/pontos`] = (data.jogadores[jogadorKey].pontos || 0) + 3;
+                        resultados[jogadorKey] = { pontosGanhos: 3, motivo: 'Você acertou a carta do narrador!' };
+                    }
+                }
+            }
+
+            // Pontos por votos recebidos nas cartas dos não-narradores
+            for (const jogadorKey in data.mesa) {
+                if (jogadorKey !== 'NARRADOR') {
+                    const donoDaCarta = data.mesa[jogadorKey].donoReal;
+                    const votosRecebidos = data.mesa[jogadorKey].votos || 0;
+                    if (votosRecebidos > 0) {
+                        const pontosAtuais = updates[`jogadores/${donoDaCarta}/pontos`] || data.jogadores[donoDaCarta].pontos || 0;
+                        updates[`jogadores/${donoDaCarta}/pontos`] = pontosAtuais + votosRecebidos;
+
+                        resultados[donoDaCarta].pontosGanhos += votosRecebidos;
+                        resultados[donoDaCarta].motivo += ` +${votosRecebidos} por votos recebidos.`;
+                    }
+                }
+            }
+
+            // Verificação de Fim de Jogo (30 pontos)
+            let maxPontos = 0;
+            let provavelVencedor = null;
+
+            for (const jKey in data.jogadores) {
+                let pts = data.jogadores[jKey].pontos || 0;
+                if (updates[`jogadores/${jKey}/pontos`] !== undefined) {
+                    pts = updates[`jogadores/${jKey}/pontos`];
+                }
+                if (pts > maxPontos) {
+                    maxPontos = pts;
+                    provavelVencedor = data.jogadores[jKey].nome || jKey;
+                }
+            }
+
+            updates['resultados_rodada'] = resultados;
+
+            if (maxPontos >= 30) {
+                updates['status'] = "FIM_JOGO";
+                updates['vencedor'] = provavelVencedor;
+            } else {
+                updates['status'] = "PONTUACAO";
+            }
+
+            db.ref('dixit').update(updates).then(() => {
+                isProcessing = false;
+            });
+        }
+
+        function exibirResultados(resultadosData, narradorAtual, isNarrador) {
+            const container = document.getElementById('resultados-rodada-container');
+            container.innerHTML = '';
+
+            for (const jogadorKey in resultadosData) {
+                const resultado = resultadosData[jogadorKey];
+                const nome = jogadorKey === narradorAtual ? `${jogadorKey} (Narrador)` : jogadorKey;
+                container.innerHTML += `
+                    <p style="margin: 5px 0; padding: 8px; background: #2c3e50; border-radius: 5px;">
+                        <strong>${nome}:</strong> +${resultado.pontosGanhos} ponto(s)
+                        <br>
+                        <small style="color: #bdc3c7;"><em>${resultado.motivo}</em></small>
+                    </p>
+                `;
+            }
+
+            if (isNarrador) {
+                document.getElementById('btn-proxima-rodada').classList.remove('hidden');
+                document.getElementById('btn-fechar-resultados').classList.add('hidden');
+            } else {
+                document.getElementById('btn-proxima-rodada').classList.add('hidden');
+                document.getElementById('btn-fechar-resultados').classList.remove('hidden');
+            }
+
+            document.getElementById('modal-pontuacao').style.display = 'flex';
+        }
+
+        function fecharModalPontuacao() {
+            document.getElementById('modal-pontuacao').style.display = 'none';
+        }
+
+        function iniciarProximaRodada() {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            db.ref('dixit').once('value').then(snapshot => {
+                const data = snapshot.val();
+                const updates = {};
+
+                // 1. Definir novo narrador
+                const jogadoresKeys = Object.keys(data.jogadores).sort(); // Ordenar para ter uma ordem consistente
+                const narradorAtualIndex = jogadoresKeys.indexOf(data.narrador_atual);
+                const novoNarradorIndex = (narradorAtualIndex + 1) % jogadoresKeys.length;
+                const novoNarradorKey = jogadoresKeys[novoNarradorIndex];
+
+                // 2. Coletar todas as cartas em jogo para não repetir
+                let cartasEmUso = [];
+                jogadoresKeys.forEach(key => {
+                    cartasEmUso.push(...(data.jogadores[key].cartas || []));
+                });
+
+                // 3. Resetar jogadores e dar nova carta
+                jogadoresKeys.forEach(key => {
+                    updates[`jogadores/${key}/isNarrador`] = (key === novoNarradorKey);
+                    updates[`jogadores/${key}/escolhaRodada`] = "";
+                    updates[`jogadores/${key}/votouEm`] = "";
+
+                    // Dar uma nova carta
+                    let novaCarta;
+                    do {
+                        novaCarta = Math.floor(Math.random() * 180) + 1;
+                    } while (cartasEmUso.includes(novaCarta));
+                    cartasEmUso.push(novaCarta);
+
+                    const maoAtual = data.jogadores[key].cartas || [];
+                    updates[`jogadores/${key}/cartas`] = [...maoAtual, novaCarta];
+                });
+
+                // 4. Resetar estado global do jogo
+                updates['status'] = "ESCOLHA_NARRADOR";
+                updates['narrador_atual'] = novoNarradorKey;
+                updates['frase_rodada'] = "";
+                updates['mesa'] = null;
+                updates['resultados_rodada'] = null;
+
+                db.ref('dixit').update(updates).then(() => {
+                    document.getElementById('modal-pontuacao').style.display = 'none';
+                    document.getElementById('btn-proxima-rodada').classList.add('hidden');
+                    isProcessing = false;
+                });
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>
