@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinuca Championship</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-4">
+
+    <header class="text-center mb-8">
+        <h1 id="camp-nome" class="text-3xl font-bold text-yellow-500">Sinuca Championship</h1>
+        <div id="top-lider" class="text-sm text-gray-400 mt-2">Aguardando início...</div>
+    </header>
+
+    <main class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <section class="space-y-6">
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                <h2 class="text-xl mb-4 border-b border-gray-700 pb-2">Gestão</h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="player-name" placeholder="Nome do Jogador" class="bg-gray-700 p-2 rounded flex-1 outline-none focus:ring-2 ring-yellow-500">
+                    <button onclick="addPlayer()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Add</button>
+                </div>
+                <button onclick="gerarCampeonato()" class="w-full bg-yellow-600 hover:bg-yellow-700 font-bold py-2 rounded transition">
+                    Sortear e Iniciar Campeonato
+                </button>
+            </div>
+
+            <div id="mesa-atual" class="bg-blue-900 p-6 rounded-xl shadow-2xl border-2 border-blue-400">
+                <h2 class="text-center text-blue-200 uppercase text-sm font-bold mb-4">Mesa Atual (Em Jogo)</h2>
+                <p class="text-center text-xs text-blue-300 mb-2 italic">Clique no nome de quem venceu:</p>
+                <div class="flex justify-between items-center gap-4 text-xl font-bold">
+                    <button id="btn-m" onclick="setWinner('m')" class="flex-1 p-4 rounded-lg bg-gray-800 border-2 border-transparent hover:border-blue-400 transition">
+                        <span id="m-mandante">---</span>
+                    </button>
+                    <div class="text-yellow-500 font-black">VS</div>
+                    <button id="btn-v" onclick="setWinner('v')" class="flex-1 p-4 rounded-lg bg-gray-800 border-2 border-transparent hover:border-blue-400 transition">
+                        <span id="m-visitante">---</span>
+                    </button>
+                </div>
+                <button onclick="finalizarPartida()" class="w-full mt-6 bg-green-500 hover:bg-green-600 text-black font-black py-3 rounded-lg">
+                    FINALIZAR PARTIDA
+                </button>
+            </div>
+        </section>
+
+        <section class="bg-gray-800 p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl mb-4 border-b border-gray-700 pb-2 text-center">Tabela de Classificação</h2>
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-gray-400 text-sm">
+                        <th class="py-2">Pos</th>
+                        <th>Jogador</th>
+                        <th>V</th>
+                        <th>D</th>
+                        <th>%</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-body">
+                    </tbody>
+            </table>
+        </section>
+
+        <section class="md:col-span-2 bg-gray-800 p-4 rounded-lg">
+            <h2 class="text-xl mb-4 border-b border-gray-700 pb-2">Próximos Confrontos</h2>
+            <div id="lista-jogos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+            apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
+            authDomain: "werewolf-877af.firebaseapp.com",
+            projectId: "werewolf-877af",
+            storageBucket: "werewolf-877af.firebasestorage.app",
+            messagingSenderId: "177329283782",
+            appId: "1:177329283782:web:30a6c6cf8732df0f802dc7"
+        };
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Parâmetros do Campeonato
+const NOME_CAMP = "Campeonato_Macario_2026"; 
+let jogadoresLocais = [];
+let partidaAtivaId = null;
+let vencedorSelecionado = null; // Armazena 'm' (mandante) ou 'v' (visitante)
+
+// Debug para confirmar o carregamento
+console.log("Iniciando Sistema de Sinuca...");
+
+// --- FUNÇÕES DE INTERFACE ---
+
+window.addPlayer = () => {
+    const input = document.getElementById('player-name');
+    const nome = input.value.trim();
+    
+    if (nome) {
+        // Verifica se o jogador já existe para evitar duplicatas simples
+        if (jogadoresLocais.includes(nome)) {
+            alert("Este jogador já está na lista!");
+            return;
+        }
+
+        console.log("Adicionando jogador:", nome);
+        set(ref(db, `sinuca/${NOME_CAMP}/Jogadores/${input.value}`), {
+            nome: input.value,
+            vitorias: 0,
+            derrotas: 0
+        });
+        input.value = "";
+    }
+};
+
+window.gerarCampeonato = async () => {
+    if (jogadoresLocais.length < 2) return alert("Mínimo 2 jogadores");
+
+    if (!confirm("Deseja iniciar um novo campeonato? Isso resetará as partidas e as estatísticas atuais.")) return;
+    
+    const partidasRef = ref(db, `sinuca/${NOME_CAMP}/Partidas`);
+    
+    // Limpar partidas anteriores e resetar vitórias/derrotas dos jogadores
+    await set(partidasRef, null);
+    for (let nome of jogadoresLocais) {
+        await update(ref(db, `sinuca/${NOME_CAMP}/Jogadores/${nome}`), { vitorias: 0, derrotas: 0 });
+    }
+    
+    // Algoritmo Round Robin (Ida e Volta)
+    jogadoresLocais.forEach(m => {
+        jogadoresLocais.forEach(v => {
+            if (m !== v) {
+                push(partidasRef, {
+                    mandante: m,
+                    visitante: v,
+                    golsM: 0,
+                    golsV: 0,
+                    status: 'pendente',
+                    vencedor: "",
+                    perdedor: ""
+                });
+            }
+        });
+    });
+};
+
+window.selecionarPartida = (id, m, v) => {
+    partidaAtivaId = id;
+    vencedorSelecionado = null;
+    document.getElementById('m-mandante').innerText = m;
+    document.getElementById('m-visitante').innerText = v;
+    
+    // Reset visual dos botões de seleção
+    document.getElementById('btn-m').className = "flex-1 p-4 rounded-lg bg-gray-800 border-2 border-transparent hover:border-blue-400 transition";
+    document.getElementById('btn-v').className = "flex-1 p-4 rounded-lg bg-gray-800 border-2 border-transparent hover:border-blue-400 transition";
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.setWinner = (lado) => {
+    if (!partidaAtivaId) return;
+    vencedorSelecionado = lado;
+    
+    const btnM = document.getElementById('btn-m');
+    const btnV = document.getElementById('btn-v');
+
+    // Aplica destaque ao selecionado e esmaece o outro
+    btnM.className = `flex-1 p-4 rounded-lg transition border-2 ${lado === 'm' ? 'bg-green-900/50 border-green-500' : 'bg-gray-800 border-transparent opacity-50'}`;
+    btnV.className = `flex-1 p-4 rounded-lg transition border-2 ${lado === 'v' ? 'bg-green-900/50 border-green-500' : 'bg-gray-800 border-transparent opacity-50'}`;
+};
+
+window.finalizarPartida = () => {
+    if (!partidaAtivaId) return alert("Selecione uma partida abaixo primeiro!");
+    if (!vencedorSelecionado) return alert("Por favor, selecione o vencedor clicando no nome dele.");
+    
+    const mandante = document.getElementById('m-mandante').innerText;
+    const visitante = document.getElementById('m-visitante').innerText;
+
+    const vencedor = vencedorSelecionado === 'm' ? mandante : visitante;
+    const perdedor = vencedorSelecionado === 'm' ? visitante : mandante;
+
+    // 1. Atualiza a Partida
+    update(ref(db, `sinuca/${NOME_CAMP}/Partidas/${partidaAtivaId}`), {
+        status: 'finalizado',
+        golsM: vencedorSelecionado === 'm' ? 1 : 0,
+        golsV: vencedorSelecionado === 'v' ? 1 : 0,
+        vencedor: vencedor,
+        perdedor: perdedor
+    });
+
+    // 2. Atualiza Ranking de forma atômica usando increment
+    update(ref(db, `sinuca/${NOME_CAMP}/Jogadores/${vencedor}`), { vitorias: increment(1) });
+    update(ref(db, `sinuca/${NOME_CAMP}/Jogadores/${perdedor}`), { derrotas: increment(1) });
+
+    // 3. Reset da Mesa Atual na UI
+    partidaAtivaId = null;
+    vencedorSelecionado = null;
+    document.getElementById('m-mandante').innerText = "---";
+    document.getElementById('m-visitante').innerText = "---";
+    document.getElementById('btn-m').className = "flex-1 p-4 rounded-lg bg-gray-800 border-2 border-transparent transition";
+    document.getElementById('btn-v').className = "flex-1 p-4 rounded-lg bg-gray-800 border-2 border-transparent transition";
+
+    console.log(`Fim de jogo! Vitória de ${vencedor}!`);
+};
+
+// --- LISTENERS EM TEMPO REAL (onSnapshot) ---
+
+onValue(ref(db, `sinuca/${NOME_CAMP}/Jogadores`), (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+        jogadoresLocais = [];
+        return;
+    }
+
+    const listaOrdenada = Object.values(data).sort((a, b) => b.vitorias - a.vitorias);
+    jogadoresLocais = Object.keys(data);
+    // Atualiza Tabela
+    const tbody = document.getElementById('tabela-body');
+    tbody.innerHTML = listaOrdenada.map((p, i) => `
+        <tr class="border-b border-gray-700 hover:bg-gray-750">
+            <td class="py-3">${i + 1}º</td>
+            <td class="font-bold">${p.nome}</td>
+            <td class="text-green-400">${p.vitorias}</td>
+            <td class="text-red-400">${p.derrotas}</td>
+            <td class="text-gray-400">${((p.vitorias / (p.vitorias + p.derrotas || 1)) * 100).toFixed(0)}%</td>
+        </tr>
+    `).join('');
+    
+    if(listaOrdenada[0]) document.getElementById('top-lider').innerText = `Líder Atual: ${listaOrdenada[0].nome}`;
+});
+
+onValue(ref(db, `sinuca/${NOME_CAMP}/Partidas`), (snapshot) => {
+    const data = snapshot.val();
+    const listaDiv = document.getElementById('lista-jogos');
+    listaDiv.innerHTML = "";
+
+    if (!data) return;
+
+    Object.entries(data).forEach(([id, p]) => {
+        const card = document.createElement('div');
+        const isFin = p.status === 'finalizado';
+        card.className = `${isFin ? 'opacity-50 bg-gray-700' : 'bg-gray-800 border-l-4 border-yellow-500'} p-3 rounded shadow cursor-pointer hover:scale-105 transition`;
+        card.innerHTML = `
+            <div class="flex justify-between items-center text-sm">
+                <span class="${p.vencedor === p.mandante ? 'text-yellow-400 font-bold' : ''}">${p.mandante}</span>
+                <span class="text-xs text-gray-500">vs</span>
+                <span class="${p.vencedor === p.visitante ? 'text-yellow-400 font-bold' : ''}">${p.visitante}</span>
+            </div>
+            ${isFin ? `<div class="text-center text-xs mt-2 font-mono bg-black/20 rounded">${p.golsM} x ${p.golsV}</div>` : '<div class="text-center text-[10px] mt-2 text-yellow-500 font-bold">AGUARDANDO</div>'}
+        `;
+        if(!isFin) card.onclick = () => window.selecionarPartida(id, p.mandante, p.visitante);
+        listaDiv.appendChild(card);
+    });
+});
+
+console.log("Sistema pronto e funções vinculadas ao window.");
+
+    </script>
+</body>
+
+
+</html>
