@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -60,16 +61,27 @@
         }
 
         @keyframes scan {
-            0% { top: 0; }
-            50% { top: 100%; }
-            100% { top: 0; }
+            0% {
+                top: 0;
+            }
+
+            50% {
+                top: 100%;
+            }
+
+            100% {
+                top: 0;
+            }
         }
 
         /* Modais */
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             justify-content: center;
             align-items: center;
             z-index: 100;
@@ -86,25 +98,35 @@
             border: 10px solid white;
         }
 
-        .alfa { background-color: #2ecc71; } /* Verde */
-        
+        .alfa {
+            background-color: #2ecc71;
+        }
+
+        /* Verde */
+
         .boiola {
             background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
             animation: rainbow 0.5s linear infinite;
         }
 
         @keyframes rainbow {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(360deg); }
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            100% {
+                filter: hue-rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
 
     <h1>DETECTOR DE BOIOLA</h1>
 
     <div id="scanner"></div>
-    
+
     <button id="btn-teste">TESTE</button>
 
     <div id="modal-alfa" class="modal" onclick="fecharModais()">
@@ -118,31 +140,31 @@
     <script>
         const btn = document.getElementById('btn-teste');
         const scanner = document.getElementById('scanner');
-        let timer;
         let isAlpha = false;
 
-        // GATILHO ESCONDIDO:
-        // Se segurar o botão por mais de 800ms, define como ALFA.
-        // Se for um clique rápido, é BOIOLA.
-        
-        btn.addEventListener('mousedown', () => {
-            isAlpha = false;
-            timer = setTimeout(() => {
-                isAlpha = true;
-                console.log("Modo Alfa Ativado"); // Só pra você saber que funcionou
-            }, 800); 
-        });
+        // Função que detecta ONDE o clique ocorreu
+        btn.addEventListener('click', (e) => {
+            // Pega a largura do botão
+            const rect = btn.getBoundingClientRect();
+            const x = e.clientX - rect.left; // Posição X do clique dentro do botão
+            const middle = rect.width / 2;
 
-        btn.addEventListener('mouseup', () => {
-            clearTimeout(timer);
+            // GATILHO ESCONDIDO: 
+            // Clique na metade DIREITA do botão = ALFA
+            // Clique na metade ESQUERDA (ou centro exato) = GOURMET
+            if (x > middle + 10) {
+                isAlpha = true;
+            } else {
+                isAlpha = false;
+            }
+
             iniciarScanner();
         });
 
         function iniciarScanner() {
-            btn.style.display = 'none';
+            btn.style.visibility = 'hidden'; // Mantém o espaço do botão para não pular o layout
             scanner.style.display = 'block';
 
-            // Simula o tempo de "processamento" do scanner
             setTimeout(() => {
                 scanner.style.display = 'none';
                 exibirResultado();
@@ -159,8 +181,9 @@
 
         function fecharModais() {
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            btn.style.display = 'block';
+            btn.style.visibility = 'visible';
         }
     </script>
 </body>
+
 </html>
