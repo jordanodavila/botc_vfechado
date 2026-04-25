@@ -389,8 +389,8 @@
       { tipo: "Evil", nome: "Zombie", habilidade: "Se você morrer pela primeira vez, você parece morto, mas ainda está vivo. Se ninguém morrer à noite, você pode atacar." },
     ];
 
-    // const NIGHT_ORDER_1 = [
-    //   "Lobisomem", "Espião", "Envenenador", "Mulher Escarlate", "Mordomo", "Monge", "Empata", "Cartomante", "Investigador", "Bibliotecário", "Lavadeira", "Drunk", "Coveiro", "Guardião"]
+    const NIGHT_ORDER_1 = [
+      "Lobisomem", "Espião", "Envenenador", "Mulher Escarlate", "Mordomo", "Monge", "Empata", "Cartomante", "Investigador", "Bibliotecário", "Lavadeira", "Drunk", "Coveiro", "Guardião"]
 
     const charactersDiv = document.getElementById("characters");
 
@@ -568,7 +568,8 @@
       for (let i = 0; i < composicao.aldeao; i++) sorteioFinal.push({ nome: nomes.pop(), perso: aldeoesDisponiveis.pop() });
       for (let i = 0; i < composicao.forasteiro; i++) sorteioFinal.push({ nome: nomes.pop(), perso: forasteirosDisponiveis.pop() });
       for (let i = 0; i < composicao.minion; i++) sorteioFinal.push({ nome: nomes.pop(), perso: minionsDisponiveis.pop() });
-      sorteioFinal.push({ nome: nomes.pop(), perso: lobisomem });
+      for (let i = 0; i < composicao.evil; i++) sorteioFinal.push({ nome: nomes.pop(), perso: monstrosDisponiveis.pop() });
+      // sorteioFinal.push({ nome: nomes.pop(), perso: lobisomem });
 
       // 4. Limpar campos atuais na tela
       document.querySelectorAll(".character").forEach(div => {
@@ -864,7 +865,7 @@
     "SOLDADO": "https://jordanodavila.github.io/botc_vfechado/jogadores_bad_moon/jogo_soldado_wsqw.html",
     "TODOS": "https://jordanodavila.github.io/botc_vfechado/jogadores_bad_moon/jogo_todos_u3hv.html",
     "VIRGEM": "https://jordanodavila.github.io/botc_vfechado/jogadores_bad_moon/jogo_virgem_0xwr.html",
-    "VOVÓ": "https://jordanodavila.github.io/botc_vfechado/jogadores_bad_moon/jogo_vovó_04s0.html",
+    "VOVÓ": "https://jordanodavila.github.io/botc_vfechado/jogadores_bad_moon/jogo_vovó_04s0.html"
 };
 
 
