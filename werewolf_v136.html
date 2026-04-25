@@ -1108,8 +1108,22 @@
             "Mordomo": "Cada noite você escolhe um jogador (não você mesmo): amanhã, você só poderá votar se esta pessoa escolhida votar.",
             "Drunk": "Você não sabe que é o bêbado. Você acha que é um personagem de um Aldeão, mas não é.",
             "Recluso": "Você pode se aparecer como mal, como um minion ou Lobisomem, mesmo que morto.",
-            "Santo": "Se você morrer por execução, sua equipe perde."
+            "Santo": "Se você morrer por execução, sua equipe perde.",
+            "Vovó": "Você começa sabendo um jogador bom e o personagem dele.\nSe o Demônio matá-lo, você morre também.",
+            "Marinheiro": "Cada noite, escolha um jogador vivo: você ou ele ficará bêbado até o anoitecer. Você não pode morrer enquanto sóbrio.",
+            "Camareira": "Cada noite, escolha 2 jogadores vivos (não você mesmo): você descobrirá quantos acordaram esta noite devido à sua habilidade.",
+            "Estalajadeiro": "Cada noite, escolha 2 jogadores: eles estão a salvo do Demônio, mas um deles fica bêbado até o próximo anoitecer.",
+            "Exorcista": "Cada noite (exceto a primeira), escolha um jogador (diferente da noite anterior): o Mal, se escolhido, descobre quem você é e então não acorda esta noite.",
+            "Cortesão": "Uma vez por jogo, à noite, escolha um personagem (não um jogador): se ele estiver no jogo, ele fica bêbado por 3 dias e 3 noites.",
+            "Apostador": "Cada noite, escolha um jogador e um personagem: se esse jogador não for esse personagem, você morre.",
+            "Professor": "Uma vez por jogo, à noite, escolha um jogador morto: se ele for um Aldeão, ele irá ressuscitar.",
+            "Menestrel": "Se um Minion morrer por execução, todos os outros jogadores (exceto você) ficam bêbados até o próximo anoitecer.",
+            "Dama do Chá": "Se seus dois vizinhos vivos forem aldeões, eles não podem morrer enquanto você estiver vivo.",
+            "Pacifista": "Jogadores do bem podem não morrer ao serem executados.",
+            "Bobo": "Na primeira vez em que você for morrer, você não morre."
         };
+
+        
 
         //#region RENDER SCRIPT: TODOS
         // --- FUNÇÃO DO PAPEL DO JOGADOR ---
@@ -1539,6 +1553,14 @@
 
             const urlImagemGhost = "icons/Icon_ghost.png";
             const urlImagemCandle = "icons/Icon_candle.png";
+
+            
+            // Lunático no jogo
+            const urlImagemLunatic = "icons/Icon_lunatic.png";
+            const dadosLunatico = playersData.find(p => p.personagem === "Lunático");
+            const nomeRealLunatico = dadosLunatico ? dadosLunatico.jogador : "---";
+            const dadosEscolhidoLunatico = playersData.find(p => p.personagem === escolhaLunatico);
+            const nomeRealEscolhidoLunatico = dadosEscolhidoLunatico ? dadosEscolhidoLunatico.jogador : "Ninguém por enquanto.";
 
             const infoLunatico = (rolesInPlay.includes("Lunático"))
                 ? `<div style="color: #FFEB3B; font-size: 10px; margin-top:5px;">⚠️<img src="${urlImagemLunatic}" style="width:50px; vertical-align:middle;"> O Lunático ${nomeRealLunatico} escolheu: ${nomeRealEscolhidoLunatico || "Ninguém ainda"}</div>`
@@ -2241,14 +2263,7 @@
                 const dadosLobisomem = playersData.find(p => p.personagem === "Lobisomem");
                 const nomeRealLobisomem = dadosLobisomem.jogador;
                 const urlImagem = "icons/Icon_imp.png";
-                const urlImagemLunatic = "icons/Icon_lunatic.png";
-
-                // Lunático no jogo
-                const dadosLunatico = playersData.find(p => p.personagem === "Lunático");
-                const nomeRealLunatico = dadosLunatico ? dadosLunatico.jogador : "---";
-                const dadosEscolhidoLunatico = playersData.find(p => p.personagem === escolhaLunatico);
-                const nomeRealEscolhidoLunatico = dadosEscolhidoLunatico ? dadosEscolhidoLunatico.jogador : "Ninguém por enquanto.";
-
+                
                 // CENÁRIO A: MORTO (MAS AINDA TEM A MULHER ESCARLATE)
                 if (loginPersonagem === 'Lobisomem (Morto)') {
                     // Dentro do bloco de Lobisomem Morto
