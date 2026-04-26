@@ -1592,7 +1592,7 @@
                 || aguardandoExorcista
 
             aguardandoLunatico = isNightPlus && playersData.find(p => p.personagem === "Lunático" && p.vivo !== false)
-                && !selectedLunaticTarget
+                && !escolhaLunatico
                 || aguardandoMonge
 
             aguardandoEvil = isNightPlus && playersData.find(p => p.tipo === "Evil" && p.vivo !== false)
