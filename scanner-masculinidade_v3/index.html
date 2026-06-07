@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner de Masculinidade 2026</title>
+
+    <!-- Scripts de IA da Face-API e TensorFlow -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.20.0/tf.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #0a0a12;
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #00ffcc88;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        #container-camera {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 20px #00ffcc55, 0 0 60px #00ffcc22;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #0d0d1a;
+            margin-bottom: 30px;
+        }
+
+        #container-camera::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(0deg, transparent, transparent 20px, #00ffcc08 20px, #00ffcc08 21px),
+                repeating-linear-gradient(90deg, transparent, transparent 20px, #00ffcc08 20px, #00ffcc08 21px);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #scanner-line {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to bottom, rgba(0,255,204,0), #00ffcc, rgba(0,255,204,0));
+            box-shadow: 0 0 16px #00ffcc, 0 0 32px #00ffcc88;
+            animation: scan 1.6s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0%   { top: 0%; opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .hud-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            z-index: 20;
+        }
+        .hud-corner.tl { top: 30px; left: 30px; border-top: 2px solid #00ffcc; border-left: 2px solid #00ffcc; }
+        .hud-corner.tr { top: 30px; right: 30px; border-top: 2px solid #00ffcc; border-right: 2px solid #00ffcc; }
+        .hud-corner.bl { bottom: 30px; left: 30px; border-bottom: 2px solid #00ffcc; border-left: 2px solid #00ffcc; }
+        .hud-corner.br { bottom: 30px; right: 30px; border-bottom: 2px solid #00ffcc; border-right: 2px solid #00ffcc; }
+
+        #btn-scanner {
+            background: transparent;
+            color: #00ffcc;
+            border: 2px solid #00ffcc;
+            padding: 15px 48px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            box-shadow: 0 0 12px rgba(0, 255, 204, 0.25);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #btn-scanner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #00ffcc;
+            transform: translateX(-101%);
+            transition: transform 0.2s ease;
+            z-index: -1;
+        }
+
+        #btn-scanner:hover:not(:disabled)::before { transform: translateX(0); }
+        #btn-scanner:hover:not(:disabled) { color: #0a0a12; box-shadow: 0 0 24px #00ffcc; }
+
+        #btn-scanner:disabled {
+            border-color: #333;
+            color: #333;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00ffcc66;
+            min-height: 20px;
+            text-align: center;
+        }
+
+        #barra-container {
+            width: 320px;
+            height: 2px;
+            background: #111;
+            margin-top: 24px;
+            overflow: hidden;
+            display: none;
+        }
+        #barra {
+            height: 100%;
+            width: 0%;
+            background: #00ffcc;
+            box-shadow: 0 0 8px #00ffcc;
+            transition: width 0.1s linear;
+        }
+
+        /* ─── Modais e Desfechos Extraídos do App Antigo ─────────────────── */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .modal-content {
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: clamp(1.5rem, 8vw, 3rem);
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px #000;
+            border: 10px solid white;
+            z-index: 110;
+            position: relative;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        .alfa {
+            background-color: #2ecc71;
+        }
+
+        .boiola {
+            background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
+            background-size: 400% 400%;
+            animation: rainbowGradient 2s ease infinite;
+        }
+
+        @keyframes rainbowGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #purpurina-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 105;
+        }
+
+        .confete {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            top: -20px;
+            z-index: 106;
+            opacity: 0.9;
+            animation: quedaConfete 3s linear forwards;
+        }
+
+        @keyframes quedaConfete {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+            25% { transform: translateY(25vh) rotate(90deg) translateX(15px); }
+            50% { transform: translateY(50vh) rotate(180deg) translateX(-15px); }
+            75% { transform: translateY(75vh) rotate(270deg) translateX(15px); }
+            100% { transform: translateY(105vh) rotate(360deg) translateX(0); opacity: 0; }
+        }
+
+        .erro {
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa0066;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⬡ DETECTOR DE GAY 2026 ⬡</h1>
+
+    <div id="container-camera">
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+        <div id="scanner-line"></div>
+        <video id="video" autoplay muted playsinline></video>
+    </div>
+
+    <button id="btn-scanner" disabled>Carregando IA...</button>
+
+    <div id="barra-container"><div id="barra"></div></div>
+
+    <div id="status">Inicializando sistema...</div>
+    <div id="erro-fallback" class="erro"></div>
+
+    <!-- Modais de Desfecho Integrados -->
+    <div id="modal-alfa" class="modal" onclick="fecharModais()">
+        <div class="modal-content alfa">HÉTERO 💪</div>
+    </div>
+
+    <div id="modal-boiola" class="modal" onclick="fecharModais()">
+        <div id="purpurina-container"></div>
+        <div class="modal-content boiola">🚨 BOIOLA DETECTADO 🚨<br>
+        <span style="font-size: 0.5em; font-weight: normal;">🚨</span></div>
+    </div>
+
+    <script>
+        const video          = document.getElementById('video');
+        const btnScanner     = document.getElementById('btn-scanner');
+        const scannerLine    = document.getElementById('scanner-line');
+        const statusDiv      = document.getElementById('status');
+        const fallbackDiv    = document.getElementById('erro-fallback');
+        const barraDiv       = document.getElementById('barra');
+        const barraContainer = document.getElementById('barra-container');
+        const pContainer     = document.getElementById('purpurina-container');
+
+        // Configuração dos Áudios do app_boiolometro
+        const somAlfa = new Audio('male-validated.mp3');
+        const somScanner = new Audio('sci-fi-scanner.mp3');
+        const somAlerta = new Audio('siren-alert.mp3');
+
+        function setStatus(msg) { statusDiv.innerText = msg; }
+
+        function animarBarra(duracaoMs, callback) {
+            barraContainer.style.display = 'block';
+            barraDiv.style.width = '0%';
+            const intervalo = 50;
+            const passos = duracaoMs / intervalo;
+            let atual = 0;
+            const timer = setInterval(() => {
+                atual++;
+                barraDiv.style.width = Math.min((atual / passos) * 100, 100) + '%';
+                if (atual >= passos) { clearInterval(timer); callback(); }
+            }, intervalo);
+        }
+
+        // ─── Inicialização da IA ─────────────────────────────────────────────
+        async function iniciarApp() {
+            await aguardarLibs();
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+                setStatus('Câmera OK — carregando modelos de IA...');
+
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('./models'),
+                ]);
+                setStatus('Modelos OK — mapeando rostos...');
+
+                const dadosTreino = await treinarRostosReferencia();
+
+                btnScanner.innerText = 'Iniciar Scanner';
+                btnScanner.disabled = false;
+                setStatus('Sistema pronto — posicione o rosto.');
+
+                btnScanner.addEventListener('click', () => rodarScanner(dadosTreino));
+
+            } catch (err) {
+                console.error(err);
+                fallbackDiv.innerText = 'Erro ao inicializar câmera ou IA.';
+                setStatus(err.message || 'Verifique se deu permissão à câmera.');
+            }
+        }
+
+        function aguardarLibs() {
+            return new Promise(resolve => {
+                const check = () => {
+                    if (typeof faceapi !== 'undefined' && typeof tf !== 'undefined') resolve();
+                    else setTimeout(check, 200);
+                };
+                check();
+            });
+        }
+
+        // ─── Mapeamento de Fotos (Estrutura de Pastas) ───────────────────────
+        // async function carregarGrupo(pasta, prefixo, maxTentativas = 20) {
+        //     const descritores = [];
+        //     for (let i = 1; i <= maxTentativas; i++) {
+        //         const nomeArquivo = `${prefixo}${i}.jpg`;
+        //         const caminho = `./fotos/${pasta}/${nomeArquivo}`;
+        //         try {
+        //             const img = await faceapi.fetchImage(caminho);
+        //             const detection = await faceapi
+        //                 .detectSingleFace(img)
+        //                 .withFaceLandmarks()
+        //                 .withFaceDescriptor();
+
+        //             if (!detection) {
+        //                 console.warn(`Rosto não detectado em ${nomeArquivo} — ignorado.`);
+        //                 continue;
+        //             }
+
+        //             const label = `${prefixo}_${i}`;
+        //             descritores.push(new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]));
+        //             setStatus(`Mapeado: ${nomeArquivo}`);
+
+        //         } catch (e) {
+        //             break;
+        //         }
+        //     }
+        //     return descritores;
+        // }
+
+        async function carregarGrupo(pasta, prefixo, maxTentativas = 20) {
+            const descritores = [];
+            for (let i = 1; i <= maxTentativas; i++) {
+                const nomeArquivo = `${prefixo}${i}.jpg`;
+                const caminho = `./fotos/${pasta}/${nomeArquivo}`;
+                try {
+                    const img = await faceapi.fetchImage(caminho);
+                    const detection = await faceapi
+                        .detectSingleFace(img)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if (!detection) {
+                        console.warn(`Rosto não detectado em ${nomeArquivo} — ignorado.`);
+                        continue;
+                    }
+
+                    const label = `${prefixo}_${i}`;
+                    descritores.push(new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]));
+                    
+                    // TEXTO CAMUFLADO: Em vez de mostrar o nome do arquivo, mostra códigos genéricos
+                    const codigoHex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase();
+                    setStatus(`Carregando banco de dados: [0x${codigoHex}]`);
+
+                } catch (e) {
+                    // 404 = fim dos arquivos daquela pasta
+                    break;
+                }
+            }
+            return descritores;
+        }
+
+        async function treinarRostosReferencia() {
+            const [descritorasVitimas, descritorasAmigos] = await Promise.all([
+                carregarGrupo('vitimas', 'vitima'),
+                carregarGrupo('amigos',  'amigo'),
+            ]);
+
+            const todos = [...descritorasVitimas, ...descritorasAmigos];
+
+            if (todos.length === 0) {
+                throw new Error('Nenhuma foto encontrada em fotos/vitimas/ ou amigos/');
+            }
+
+            return {
+                matcher: new faceapi.FaceMatcher(todos, 0.6),
+                vitimas: descritorasVitimas.map(d => d.label),
+            };
+        }
+
+        // ─── Scanner e Desfecho ──────────────────────────────────────────────
+        async function rodarScanner({ matcher, vitimas }) {
+            btnScanner.disabled = true;
+            fallbackDiv.innerText = '';
+            scannerLine.style.display = 'block';
+            setStatus('Analisando feições...');
+
+            // Dispara o som do scanner em loop
+            somScanner.currentTime = 0;
+            somScanner.loop = true;
+            somScanner.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+
+            animarBarra(3000, async () => {
+                try {
+                    const detection = await faceapi
+                        .detectSingleFace(video)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    // Pausa o áudio do scanner
+                    somScanner.pause();
+                    somScanner.currentTime = 0;
+
+                    scannerLine.style.display = 'none';
+                    barraContainer.style.display = 'none';
+
+                    if (!detection) {
+                        fallbackDiv.innerText = 'Rosto não detectado. Tente novamente com mais luz.';
+                        setStatus('Erro na leitura.');
+                        btnScanner.disabled = false;
+                    } else {
+                        const bestMatch = matcher.findBestMatch(detection.descriptor);
+                        const isVitima  = vitimas.includes(bestMatch.label);
+
+                        exibirResultadoFinal(isVitima, bestMatch.distance);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    somScanner.pause();
+                    scannerLine.style.display = 'none';
+                    barraContainer.style.display = 'none';
+                    fallbackDiv.innerText = 'Erro crítico no escaneamento.';
+                    btnScanner.disabled = false;
+                }
+            });
+        }
+
+        // Exibe os modais e roda os efeitos visuais e sonoros do app_boiolometro
+        function exibirResultadoFinal(isVitima, distance) {
+            if (isVitima) {
+                jogarPurpurina();
+                somAlerta.play().catch(e => console.log("Erro som alerta"));
+                document.getElementById('modal-boiola').style.display = 'flex';
+                //setStatus(`Correspondência: ${(distance * 100).toFixed(1)}% de precisão.`);
+                setStatus(`Bichona.`);
+            } else {
+                somAlfa.play().catch(e => console.log("Erro som alfa"));
+                document.getElementById('modal-alfa').style.display = 'flex';
+                setStatus('Análise concluída — Perfil Alfa verificado.');
+            }
+        }
+
+        // Chuva de Purpurina Espalhafatosa (800 partículas)
+        function jogarPurpurina() {
+            pContainer.innerHTML = '';
+            const cores = ['#FFD700', '#FF69B4', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF'];
+
+            for (let i = 0; i < 800; i++) {
+                const confete = document.createElement('div');
+                confete.classList.add('confete');
+
+                confete.style.left = Math.random() * 100 + 'vw';
+                confete.style.animationDelay = Math.random() * 3 + 's';
+
+                const tamanho = (Math.random() * 6 + 4) + 'px';
+                confete.style.width = tamanho;
+                confete.style.height = tamanho;
+
+                confete.style.backgroundColor = cores[Math.floor(Math.random() * cores.length)];
+                confete.style.boxShadow = `0 0 5px ${confete.style.backgroundColor}`;
+
+                pContainer.appendChild(confete);
+            }
+        }
+
+        function fecharModais() {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            pContainer.innerHTML = ''; 
+            btnScanner.disabled = false;
+            setStatus('Posicione o rosto para um novo teste.');
+        }
+
+        window.addEventListener('DOMContentLoaded', iniciarApp);
+    </script>
+</body>
+</html>
