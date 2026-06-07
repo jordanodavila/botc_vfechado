@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner de Masculinidade 2026</title>
 
-    <!-- Scripts de IA da Face-API e TensorFlow -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.20.0/tf.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+    <!-- Firebase: apenas Realtime Database (Storage removido) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,7 +24,8 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding: 20px 0;
         }
 
         h1 {
@@ -67,8 +71,7 @@
         #scanner-line {
             display: none;
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             width: 100%;
             height: 6px;
             background: linear-gradient(to bottom, rgba(0,255,204,0), #00ffcc, rgba(0,255,204,0));
@@ -78,21 +81,16 @@
         }
 
         @keyframes scan {
-            0%   { top: 0%; opacity: 0; }
+            0%   { top: 0%;   opacity: 0; }
             10%  { opacity: 1; }
             90%  { opacity: 1; }
             100% { top: 100%; opacity: 0; }
         }
 
-        .hud-corner {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            z-index: 20;
-        }
-        .hud-corner.tl { top: 30px; left: 30px; border-top: 2px solid #00ffcc; border-left: 2px solid #00ffcc; }
-        .hud-corner.tr { top: 30px; right: 30px; border-top: 2px solid #00ffcc; border-right: 2px solid #00ffcc; }
-        .hud-corner.bl { bottom: 30px; left: 30px; border-bottom: 2px solid #00ffcc; border-left: 2px solid #00ffcc; }
+        .hud-corner { position: absolute; width: 20px; height: 20px; z-index: 20; }
+        .hud-corner.tl { top: 30px;    left: 30px;  border-top:    2px solid #00ffcc; border-left:  2px solid #00ffcc; }
+        .hud-corner.tr { top: 30px;    right: 30px; border-top:    2px solid #00ffcc; border-right: 2px solid #00ffcc; }
+        .hud-corner.bl { bottom: 30px; left: 30px;  border-bottom: 2px solid #00ffcc; border-left:  2px solid #00ffcc; }
         .hud-corner.br { bottom: 30px; right: 30px; border-bottom: 2px solid #00ffcc; border-right: 2px solid #00ffcc; }
 
         #btn-scanner {
@@ -106,12 +104,11 @@
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 4px;
-            box-shadow: 0 0 12px rgba(0, 255, 204, 0.25);
+            box-shadow: 0 0 12px rgba(0,255,204,0.25);
             transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
         }
-
         #btn-scanner::before {
             content: '';
             position: absolute;
@@ -121,16 +118,9 @@
             transition: transform 0.2s ease;
             z-index: -1;
         }
-
         #btn-scanner:hover:not(:disabled)::before { transform: translateX(0); }
         #btn-scanner:hover:not(:disabled) { color: #0a0a12; box-shadow: 0 0 24px #00ffcc; }
-
-        #btn-scanner:disabled {
-            border-color: #333;
-            color: #333;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
+        #btn-scanner:disabled { border-color: #333; color: #333; cursor: not-allowed; box-shadow: none; }
 
         #status {
             margin-top: 20px;
@@ -143,35 +133,32 @@
         }
 
         #barra-container {
-            width: 320px;
-            height: 2px;
+            width: 320px; height: 2px;
             background: #111;
             margin-top: 24px;
             overflow: hidden;
             display: none;
         }
         #barra {
-            height: 100%;
-            width: 0%;
+            height: 100%; width: 0%;
             background: #00ffcc;
             box-shadow: 0 0 8px #00ffcc;
             transition: width 0.1s linear;
         }
 
-        /* ─── Modais e Desfechos Extraídos do App Antigo ─────────────────── */
+        .erro { color: #ffaa00; text-shadow: 0 0 10px #ffaa0066; font-size: 14px; margin-top: 15px; }
+
+        /* ─── Modais ──────────────────────────────────────────────────────── */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             justify-content: center;
             align-items: center;
             z-index: 100;
             overflow: hidden;
         }
-
         .modal-content {
             padding: 50px;
             border-radius: 20px;
@@ -185,62 +172,82 @@
             position: relative;
             font-family: 'Arial Black', sans-serif;
         }
-
-        .alfa {
-            background-color: #2ecc71;
-        }
-
-        .boiola {
+        .alfa    { background-color: #2ecc71; }
+        .boiola  {
             background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
             background-size: 400% 400%;
             animation: rainbowGradient 2s ease infinite;
         }
-
         @keyframes rainbowGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0%   { background-position: 0%   50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0%   50%; }
         }
 
         #purpurina-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 105;
         }
-
         .confete {
             position: absolute;
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             top: -20px;
             z-index: 106;
             opacity: 0.9;
             animation: quedaConfete 3s linear forwards;
         }
-
         @keyframes quedaConfete {
-            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
-            25% { transform: translateY(25vh) rotate(90deg) translateX(15px); }
-            50% { transform: translateY(50vh) rotate(180deg) translateX(-15px); }
-            75% { transform: translateY(75vh) rotate(270deg) translateX(15px); }
-            100% { transform: translateY(105vh) rotate(360deg) translateX(0); opacity: 0; }
+            0%   { transform: translateY(0)     rotate(0deg)   translateX(0);    opacity: 1; }
+            25%  { transform: translateY(25vh)  rotate(90deg)  translateX(15px); }
+            50%  { transform: translateY(50vh)  rotate(180deg) translateX(-15px);}
+            75%  { transform: translateY(75vh)  rotate(270deg) translateX(15px); }
+            100% { transform: translateY(105vh) rotate(360deg) translateX(0);    opacity: 0; }
         }
 
-        .erro {
-            color: #ffaa00;
-            text-shadow: 0 0 10px #ffaa0066;
-            font-size: 14px;
-            margin-top: 15px;
+        /* ─── Feed ────────────────────────────────────────────────────────── */
+        #feed-container {
+            width: 320px;
+            margin-top: 35px;
+            border-top: 1px solid #00ffcc22;
+            padding-top: 20px;
         }
+        #feed-container h3 {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00ffcc77;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .feed-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #0d0d1a;
+            border: 1px solid #00ffcc11;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+        .feed-avatar {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: 1px solid #00ffcc44;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .feed-info      { display: flex; flex-direction: column; gap: 2px; }
+        .feed-res-alfa  { color: #2ecc71; font-weight: bold; font-size: 13px; }
+        .feed-res-gourmet { color: #ff0055; font-weight: bold; font-size: 13px; text-shadow: 0 0 6px #ff0055aa; }
+        .feed-time      { color: #555; font-size: 9px; }
     </style>
 </head>
 <body>
 
-    <h1>⬡ DETECTOR DE GAY 2026 ⬡</h1>
+    <h1>⬡ SCANNER DE MASCULINIDADE 2026 ⬡</h1>
 
     <div id="container-camera">
         <div class="hud-corner tl"></div>
@@ -258,7 +265,11 @@
     <div id="status">Inicializando sistema...</div>
     <div id="erro-fallback" class="erro"></div>
 
-    <!-- Modais de Desfecho Integrados -->
+    <div id="feed-container">
+        <h3>⬡ Últimos Resultados ⬡</h3>
+        <div id="feed-lista"></div>
+    </div>
+
     <div id="modal-alfa" class="modal" onclick="fecharModais()">
         <div class="modal-content alfa">HÉTERO 💪</div>
     </div>
@@ -266,10 +277,23 @@
     <div id="modal-boiola" class="modal" onclick="fecharModais()">
         <div id="purpurina-container"></div>
         <div class="modal-content boiola">🚨 BOIOLA DETECTADO 🚨<br>
-        <span style="font-size: 0.5em; font-weight: normal;">🚨</span></div>
+        <span style="font-size:0.5em; font-weight:normal;">(Gay)</span></div>
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
+            authDomain: "werewolf-877af.firebaseapp.com",
+            projectId: "werewolf-877af",
+            storageBucket: "werewolf-877af.firebasestorage.app",
+            messagingSenderId: "177329283782",
+            appId: "1:177329283782:web:30a6c6cf8732df0f802dc7"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const rtdb = firebase.database();
+
+        // ─── Refs de elementos ───────────────────────────────────────────────
         const video          = document.getElementById('video');
         const btnScanner     = document.getElementById('btn-scanner');
         const scannerLine    = document.getElementById('scanner-line');
@@ -278,12 +302,13 @@
         const barraDiv       = document.getElementById('barra');
         const barraContainer = document.getElementById('barra-container');
         const pContainer     = document.getElementById('purpurina-container');
+        const feedLista      = document.getElementById('feed-lista');
 
-        // Configuração dos Áudios do app_boiolometro
-        const somAlfa = new Audio('male-validated.mp3');
+        const somAlfa    = new Audio('male-validated.mp3');
         const somScanner = new Audio('sci-fi-scanner.mp3');
-        const somAlerta = new Audio('siren-alert.mp3');
+        const somAlerta  = new Audio('siren-alert.mp3');
 
+        // ─── UI ──────────────────────────────────────────────────────────────
         function setStatus(msg) { statusDiv.innerText = msg; }
 
         function animarBarra(duracaoMs, callback) {
@@ -299,33 +324,141 @@
             }, intervalo);
         }
 
-        // ─── Inicialização da IA ─────────────────────────────────────────────
+        // ─── Feed: lê os últimos 5 resultados ───────────────────────────────
+        // Usa .once() em vez de .on() para evitar listeners duplicados
+        // acumulados entre re-renders. Chamado na init e após cada salvamento.
+        // ─── Feed: lê os últimos 5 resultados (CORRIGIDO) ───────────────────
+        function atualizarFeed() {
+            rtdb.ref("resultados")
+                .limitToLast(10) // Captura os últimos 10 registros do banco
+                .once("value")
+                .then((snapshot) => {
+                    feedLista.innerHTML = "";
+
+                    if (!snapshot.exists()) {
+                        feedLista.innerHTML = "<p style='font-size:10px;color:#444;text-align:center;'>Aguardando primeiros registros...</p>";
+                        return;
+                    }
+
+                    const registros = [];
+                    
+                    // CORREÇÃO CRÍTICA: Usar o .forEach nativo do snapshot do Firebase 
+                    // para iterar por todos os filhos mantendo o mapeamento correto.
+                    snapshot.forEach((childSnapshot) => {
+                        registros.push(childSnapshot.val());
+                    });
+
+                    // Inverte o array para que o resultado recém-gerado fique no topo do feed
+                    registros.reverse().forEach(dados => {
+                        const classeEstilo  = dados.resultadoId === "gourmet" ? "feed-res-gourmet" : "feed-res-alfa";
+                        const horaFormatada = dados.timestamp
+                            ? new Date(dados.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                            : '--:--';
+
+                        const img = document.createElement("img");
+                        img.src = dados.fotoBase64 || "";
+                        img.className = "feed-avatar";
+                        img.alt = "Scanner";
+
+                        const info = document.createElement("div");
+                        info.className = "feed-info";
+                        info.innerHTML = `
+                            <span class="${classeEstilo}">${dados.resultadoTexto}</span>
+                            <span class="feed-time">Análise concluída às ${horaFormatada}</span>
+                        `;
+
+                        const item = document.createElement("div");
+                        item.className = "feed-item";
+                        item.appendChild(img);
+                        item.appendChild(info);
+
+                        feedLista.appendChild(item);
+                    });
+                })
+                .catch(err => console.error("Erro ao carregar feed:", err));
+        }
+
+        // Mantém compatibilidade com a chamada em iniciarApp
+        function ativarListenerFeed() { atualizarFeed(); }
+
+        // ─── Captura frame do vídeo como base64 (JPEG comprimido) ───────────
+        // Resolução reduzida para 160x160 — suficiente para thumbnail no feed
+        // e muito mais leve no banco (~15–25 KB por foto vs ~150 KB em full res)
+        function snapshotParaBase64() {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                canvas.width  = 160;
+                canvas.height = 160;
+                const ctx = canvas.getContext('2d');
+
+                // Centraliza e recorta o vídeo num quadrado (igual ao círculo da UI)
+                const vw = video.videoWidth  || 640;
+                const vh = video.videoHeight || 480;
+                const lado = Math.min(vw, vh);
+                const ox = (vw - lado) / 2;
+                const oy = (vh - lado) / 2;
+
+                // Desfaz o espelhamento do CSS para salvar a imagem correta
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, ox, oy, lado, lado, 0, 0, canvas.width, canvas.height);
+
+                // qualidade 0.7 = boa aparência com arquivo pequeno
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            });
+        }
+
+        // ─── Salva resultado no Realtime Database (sem Storage) ──────────────
+        async function salvarResultadoNoFirebase(isVitima) {
+            try {
+                const fotoBase64     = await snapshotParaBase64();
+                const resultadoId    = isVitima ? "gourmet" : "alfa";
+                const resultadoTexto = isVitima ? "🚨 BOIOLA" : "HÉTERO 💪";
+
+                await rtdb.ref("resultados").push({
+                    fotoBase64,
+                    resultadoId,
+                    resultadoTexto,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                // Recarrega o feed após salvar
+                atualizarFeed();
+
+            } catch (err) {
+                console.error("Erro ao salvar no Firebase:", err);
+            }
+        }
+
+        // ─── Inicialização ───────────────────────────────────────────────────
         async function iniciarApp() {
             await aguardarLibs();
             try {
+                ativarListenerFeed();
+
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 video.srcObject = stream;
-                setStatus('Câmera OK — carregando modelos de IA...');
+                setStatus('Acessando canais de vídeo...');
 
                 await Promise.all([
                     faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
                     faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
                     faceapi.nets.faceRecognitionNet.loadFromUri('./models'),
                 ]);
-                setStatus('Modelos OK — mapeando rostos...');
+                setStatus('Carregando algoritmos centrais...');
 
                 const dadosTreino = await treinarRostosReferencia();
 
                 btnScanner.innerText = 'Iniciar Scanner';
                 btnScanner.disabled = false;
-                setStatus('Sistema pronto — posicione o rosto.');
+                setStatus('Pronto para varredura. Posicione o rosto.');
 
                 btnScanner.addEventListener('click', () => rodarScanner(dadosTreino));
 
             } catch (err) {
                 console.error(err);
-                fallbackDiv.innerText = 'Erro ao inicializar câmera ou IA.';
-                setStatus(err.message || 'Verifique se deu permissão à câmera.');
+                fallbackDiv.innerText = 'Falha no subsistema de inicialização.';
+                setStatus(err.message || 'Verifique as permissões de hardware.');
             }
         }
 
@@ -339,62 +472,31 @@
             });
         }
 
-        // ─── Mapeamento de Fotos (Estrutura de Pastas) ───────────────────────
-        // async function carregarGrupo(pasta, prefixo, maxTentativas = 20) {
-        //     const descritores = [];
-        //     for (let i = 1; i <= maxTentativas; i++) {
-        //         const nomeArquivo = `${prefixo}${i}.jpg`;
-        //         const caminho = `./fotos/${pasta}/${nomeArquivo}`;
-        //         try {
-        //             const img = await faceapi.fetchImage(caminho);
-        //             const detection = await faceapi
-        //                 .detectSingleFace(img)
-        //                 .withFaceLandmarks()
-        //                 .withFaceDescriptor();
-
-        //             if (!detection) {
-        //                 console.warn(`Rosto não detectado em ${nomeArquivo} — ignorado.`);
-        //                 continue;
-        //             }
-
-        //             const label = `${prefixo}_${i}`;
-        //             descritores.push(new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]));
-        //             setStatus(`Mapeado: ${nomeArquivo}`);
-
-        //         } catch (e) {
-        //             break;
-        //         }
-        //     }
-        //     return descritores;
-        // }
-
+        // ─── Treinamento ─────────────────────────────────────────────────────
+        //
+        //   fotos/
+        //   ├── vitimas/  vitima1.jpg, vitima2.jpg ...  → "BOIOLA / GOURMET"
+        //   └── amigos/   amigo1.jpg,  amigo2.jpg  ...  → "HÉTERO / ALFA"
+        //
         async function carregarGrupo(pasta, prefixo, maxTentativas = 20) {
             const descritores = [];
             for (let i = 1; i <= maxTentativas; i++) {
                 const nomeArquivo = `${prefixo}${i}.jpg`;
-                const caminho = `./fotos/${pasta}/${nomeArquivo}`;
                 try {
-                    const img = await faceapi.fetchImage(caminho);
+                    const img = await faceapi.fetchImage(`./fotos/${pasta}/${nomeArquivo}`);
                     const detection = await faceapi
                         .detectSingleFace(img)
                         .withFaceLandmarks()
                         .withFaceDescriptor();
 
-                    if (!detection) {
-                        console.warn(`Rosto não detectado em ${nomeArquivo} — ignorado.`);
-                        continue;
-                    }
+                    if (!detection) continue;
 
-                    const label = `${prefixo}_${i}`;
-                    descritores.push(new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]));
-                    
-                    // TEXTO CAMUFLADO: Em vez de mostrar o nome do arquivo, mostra códigos genéricos
-                    const codigoHex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase();
-                    setStatus(`Carregando banco de dados: [0x${codigoHex}]`);
+                    descritores.push(new faceapi.LabeledFaceDescriptors(`${prefixo}_${i}`, [detection.descriptor]));
 
+                    const hexFake = Math.floor(Math.random() * 16777215).toString(16).toUpperCase();
+                    setStatus(`Sincronizando setor: [0x${hexFake}]`);
                 } catch (e) {
-                    // 404 = fim dos arquivos daquela pasta
-                    break;
+                    break; // 404 = acabaram os arquivos desse grupo
                 }
             }
             return descritores;
@@ -405,30 +507,24 @@
                 carregarGrupo('vitimas', 'vitima'),
                 carregarGrupo('amigos',  'amigo'),
             ]);
-
             const todos = [...descritorasVitimas, ...descritorasAmigos];
-
-            if (todos.length === 0) {
-                throw new Error('Nenhuma foto encontrada em fotos/vitimas/ ou amigos/');
-            }
-
+            if (todos.length === 0) throw new Error('Nenhum mapeamento facial disponível.');
             return {
                 matcher: new faceapi.FaceMatcher(todos, 0.6),
                 vitimas: descritorasVitimas.map(d => d.label),
             };
         }
 
-        // ─── Scanner e Desfecho ──────────────────────────────────────────────
+        // ─── Scanner ─────────────────────────────────────────────────────────
         async function rodarScanner({ matcher, vitimas }) {
             btnScanner.disabled = true;
             fallbackDiv.innerText = '';
             scannerLine.style.display = 'block';
-            setStatus('Analisando feições...');
+            setStatus('Analisando arquitetura facial...');
 
-            // Dispara o som do scanner em loop
             somScanner.currentTime = 0;
             somScanner.loop = true;
-            somScanner.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+            somScanner.play().catch(() => {});
 
             animarBarra(3000, async () => {
                 try {
@@ -437,75 +533,70 @@
                         .withFaceLandmarks()
                         .withFaceDescriptor();
 
-                    // Pausa o áudio do scanner
                     somScanner.pause();
                     somScanner.currentTime = 0;
-
                     scannerLine.style.display = 'none';
                     barraContainer.style.display = 'none';
 
                     if (!detection) {
-                        fallbackDiv.innerText = 'Rosto não detectado. Tente novamente com mais luz.';
-                        setStatus('Erro na leitura.');
+                        fallbackDiv.innerText = 'Estrutura não identificada. Aumente a luminosidade facial.';
+                        setStatus('Falha na varredura.');
                         btnScanner.disabled = false;
-                    } else {
-                        const bestMatch = matcher.findBestMatch(detection.descriptor);
-                        const isVitima  = vitimas.includes(bestMatch.label);
-
-                        exibirResultadoFinal(isVitima, bestMatch.distance);
+                        return;
                     }
+
+                    const bestMatch = matcher.findBestMatch(detection.descriptor);
+                    const isVitima  = vitimas.includes(bestMatch.label);
+
+                    // Salva no Firebase em paralelo (não bloqueia a animação)
+                    salvarResultadoNoFirebase(isVitima);
+
+                    exibirResultadoFinal(isVitima);
+
                 } catch (err) {
                     console.error(err);
                     somScanner.pause();
                     scannerLine.style.display = 'none';
                     barraContainer.style.display = 'none';
-                    fallbackDiv.innerText = 'Erro crítico no escaneamento.';
+                    fallbackDiv.innerText = 'Exceção fatal no barramento de dados.';
                     btnScanner.disabled = false;
                 }
             });
         }
 
-        // Exibe os modais e roda os efeitos visuais e sonoros do app_boiolometro
-        function exibirResultadoFinal(isVitima, distance) {
+        function exibirResultadoFinal(isVitima) {
             if (isVitima) {
                 jogarPurpurina();
-                somAlerta.play().catch(e => console.log("Erro som alerta"));
+                somAlerta.play().catch(() => {});
                 document.getElementById('modal-boiola').style.display = 'flex';
-                //setStatus(`Correspondência: ${(distance * 100).toFixed(1)}% de precisão.`);
-                setStatus(`Bichona.`);
+                setStatus('Análise concluída.');
             } else {
-                somAlfa.play().catch(e => console.log("Erro som alfa"));
+                somAlfa.play().catch(() => {});
                 document.getElementById('modal-alfa').style.display = 'flex';
                 setStatus('Análise concluída — Perfil Alfa verificado.');
             }
         }
 
-        // Chuva de Purpurina Espalhafatosa (800 partículas)
         function jogarPurpurina() {
             pContainer.innerHTML = '';
-            const cores = ['#FFD700', '#FF69B4', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF'];
-
+            const cores = ['#FFD700','#FF69B4','#00BFFF','#ADFF2F','#FF4500','#FFFFFF'];
             for (let i = 0; i < 800; i++) {
-                const confete = document.createElement('div');
-                confete.classList.add('confete');
-
-                confete.style.left = Math.random() * 100 + 'vw';
-                confete.style.animationDelay = Math.random() * 3 + 's';
-
+                const c = document.createElement('div');
+                c.classList.add('confete');
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.animationDelay = Math.random() * 3 + 's';
                 const tamanho = (Math.random() * 6 + 4) + 'px';
-                confete.style.width = tamanho;
-                confete.style.height = tamanho;
-
-                confete.style.backgroundColor = cores[Math.floor(Math.random() * cores.length)];
-                confete.style.boxShadow = `0 0 5px ${confete.style.backgroundColor}`;
-
-                pContainer.appendChild(confete);
+                c.style.width  = tamanho;
+                c.style.height = tamanho;
+                c.style.backgroundColor = cores[Math.floor(Math.random() * cores.length)];
+                c.style.boxShadow = `0 0 5px ${c.style.backgroundColor}`;
+                pContainer.appendChild(c);
             }
         }
 
         function fecharModais() {
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            pContainer.innerHTML = ''; 
+            pContainer.innerHTML = '';
             btnScanner.disabled = false;
             setStatus('Posicione o rosto para um novo teste.');
         }
