@@ -1,0 +1,225 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+#gr{font-family:'Nunito',sans-serif;min-height:560px;background:linear-gradient(155deg,#fce4ec 0%,#ede7f6 50%,#e0f7fa 100%);border-radius:24px;padding:0;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center}
+.sbg{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.st{position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(255,220,80,.5);animation:twk 2.5s infinite alternate}
+@keyframes twk{from{opacity:.3;transform:scale(.8)}to{opacity:1;transform:scale(1.2)}}
+.parea{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;padding-top:16px}
+.pav{width:108px;height:108px;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 18px rgba(0,0,0,.13);background:#fff;display:flex;align-items:center;justify-content:center;font-size:62px;transition:transform .3s}
+.pav.bounce{animation:avb .5s cubic-bezier(.36,1.6,.6,1)}
+@keyframes avb{0%{transform:scale(1)}40%{transform:scale(1.2) rotate(-4deg)}70%{transform:scale(.95) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
+.pav.shake{animation:shk .4s}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}60%{transform:translateX(8px)}80%{transform:translateX(-4px)}}
+.pnb{margin-top:7px;padding:4px 18px;border-radius:20px;font-size:14px;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.2)}
+.sb{position:relative;background:#fff;border-radius:18px;padding:13px 18px;margin:12px 16px 0;font-size:17px;font-weight:800;color:#3c3c6e;text-align:center;min-height:50px;box-shadow:0 2px 12px rgba(100,80,180,.1);z-index:2;border:2px solid rgba(120,90,200,.1);width:calc(100% - 32px)}
+.sb::after{content:'';position:absolute;top:-15px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-bottom-color:#fff}
+.lpb{display:flex;gap:4px;justify-content:center;margin-top:6px;height:14px}
+.lpb span{display:block;width:5px;border-radius:3px;background:#b39ddb}
+.lpb.on span{animation:lp .45s infinite alternate}
+.lpb span:nth-child(1){animation-delay:0s}.lpb span:nth-child(2){animation-delay:.1s}.lpb span:nth-child(3){animation-delay:.18s}.lpb span:nth-child(4){animation-delay:.08s}.lpb span:nth-child(5){animation-delay:.22s}
+@keyframes lp{from{height:4px}to{height:14px}}
+.lhl{font-size:40px;font-weight:900;text-align:center;margin:8px 0 2px;z-index:2;position:relative}
+.og{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:8px 18px 18px;width:100%;z-index:2;position:relative}
+.lb{font-family:'Nunito',sans-serif;font-size:46px;font-weight:900;border:none;border-radius:20px;padding:14px 10px;cursor:pointer;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.13);box-shadow:0 4px 0 0 rgba(0,0,0,.1),0 6px 18px rgba(0,0,0,.07);outline:none;min-height:78px;-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.lb:active{transform:scale(.93) translateY(2px)}
+.lb.cf{animation:cfx .5s ease-out}
+@keyframes cfx{0%{transform:scale(1)}35%{transform:scale(1.18);box-shadow:0 0 32px 8px rgba(100,220,100,.5)}70%{transform:scale(.96)}100%{transform:scale(1)}}
+.lb.wf{animation:wfx .42s ease-out}
+@keyframes wfx{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px)}60%{transform:translateX(8px)}}
+.sca{position:relative;z-index:2;display:flex;gap:5px;flex-wrap:wrap;justify-content:center;padding:4px 16px 0;min-height:26px}
+.si{font-size:20px}
+.nb{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;background:linear-gradient(120deg,#ab47bc,#7e57c2);color:#fff;border:none;border-radius:50px;padding:12px 34px;cursor:pointer;margin:4px 0 14px;box-shadow:0 4px 16px rgba(126,87,194,.28);transition:transform .18s;z-index:2;position:relative;display:none}
+.nb:active{transform:scale(.95)}
+.ccon{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
+.cp{position:absolute;width:10px;height:10px;border-radius:2px;animation:cfall 1.2s ease-in forwards}
+@keyframes cfall{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(360px) rotate(480deg);opacity:0}}
+.rc{font-size:12px;font-weight:800;color:rgba(100,60,160,.45);text-align:center;z-index:2;position:relative;padding-top:2px}
+</style>
+
+<div id="gr">
+  <div class="sbg" id="sbg"></div>
+  <div class="ccon" id="ccon"></div>
+  <div class="parea">
+    <div class="pav" id="pav">👑</div>
+    <div class="pnb" id="pnb" style="background:#ab47bc">Carregando...</div>
+  </div>
+  <div class="sca" id="sca"></div>
+  <div class="sb" id="sb">
+    <span id="st">✨ Oi, Larissa! Vamos brincar?</span>
+    <div class="lpb" id="lpb"><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+  <div class="lhl" id="lhl" style="display:none"></div>
+  <div class="og" id="og" style="display:none"></div>
+  <button class="nb" id="nb" onclick="nextRound()">Próxima ✨</button>
+  <div class="rc" id="rc"></div>
+</div>
+
+<script>
+const ROUNDS = [
+  {princesa:"Cinderela",emoji:"👗",badge:"#1565c0",
+   letra:"A",opcoes:["A","L","E","I"],
+   pergunta:{td:"Larissa, qual a letra A? ✨",tl:"Larissa, qual a letra A?"},
+   acerto:{td:"Bibbidi Bobbidi Bu! Muito bem, Larissa! 🌟",tl:"Bibbidi Bobbidi Bu! Muito bem, Larissa!"},
+   erro:{td:"Tente de novo, Larissa! Você consegue! 💙",tl:"Tente de novo, Larissa! Você consegue!"}},
+  {princesa:"Ariel",emoji:"🧜",badge:"#00838f",
+   letra:"E",opcoes:["U","E","L","V"],
+   pergunta:{td:"Larissa, qual a letra E? 🐠",tl:"Larissa, qual a letra E?"},
+   acerto:{td:"Incrível! Você é a melhor! 🌊",tl:"Incrível! Você é a melhor!"},
+   erro:{td:"Tente de novo, com jeitinho! 🌊",tl:"Tente de novo, com jeitinho!"}},
+  {princesa:"Rapunzel",emoji:"🌺",badge:"#6a1b9a",
+   letra:"L",opcoes:["L","I","F","O"],
+   pergunta:{td:"Larissa, qual a letra L? 🦎",tl:"Larissa, qual a letra L?"},
+   acerto:{td:"Que demais! Você arrasou, Larissa! 🌺",tl:"Que demais! Você arrasou, Larissa!"},
+   erro:{td:"Tente mais uma vez! Vai lá! 💜",tl:"Tente mais uma vez! Vai lá!"}},
+  {princesa:"Aurora",emoji:"🌹",badge:"#880e4f",
+   letra:"I",opcoes:["E","U","I","A"],
+   pergunta:{td:"Larissa, qual a letra I? 🌹",tl:"Larissa, qual a letra I?"},
+   acerto:{td:"Parabéns! Muito bem! 🌟",tl:"Parabéns! Muito bem!"},
+   erro:{td:"Tente de novo, com carinho! 🌸",tl:"Tente de novo, com carinho!"}},
+  {princesa:"Bela",emoji:"📚",badge:"#e65100",
+   letra:"O",opcoes:["O","L","U","J"],
+   pergunta:{td:"Larissa, qual a letra O? 🌼",tl:"Larissa, qual a letra O?"},
+   acerto:{td:"Fantástico! Larissa, você é incrível! ✨",tl:"Fantástico! Larissa, você é incrível!"},
+   erro:{td:"Quase lá! Tente de novo! 🌻",tl:"Quase lá! Tente de novo!"}},
+  {princesa:"Jasmine",emoji:"🌙",badge:"#1b5e20",
+   letra:"U",opcoes:["I","V","U","E"],
+   pergunta:{td:"Larissa, qual a letra U? 🌙",tl:"Larissa, qual a letra U?"},
+   acerto:{td:"Maravilha! Que menina esperta! 🌟",tl:"Maravilha! Que menina esperta!"},
+   erro:{td:"Tente mais uma vez, você consegue! 💚",tl:"Tente mais uma vez, você consegue!"}},
+  {princesa:"Moana",emoji:"🌊",badge:"#bf360c",
+   letra:"V",opcoes:["V","F","L","I"],
+   pergunta:{td:"Larissa, qual a letra V? 🌺",tl:"Larissa, qual a letra V?"},
+   acerto:{td:"Isso aí! A letra da mamãe! Muito bem! 🌊",tl:"Isso aí! A letra da mamãe! Muito bem!"},
+   erro:{td:"Tente de novo, Larissa! 🌊",tl:"Tente de novo, Larissa!"}},
+  {princesa:"Tiana",emoji:"🐸",badge:"#2e7d32",
+   letra:"J",opcoes:["J","A","E","L"],
+   pergunta:{td:"Larissa, qual a letra J? 🍀",tl:"Larissa, qual a letra J?"},
+   acerto:{td:"A letra do papai! Arrasou, Larissa! 🌟",tl:"A letra do papai! Arrasou, Larissa!"},
+   erro:{td:"Tente mais uma vez! Confiança! 💚",tl:"Tente mais uma vez! Confiança!"}},
+  {princesa:"Cinderela",emoji:"👗",badge:"#1565c0",
+   letra:"F",opcoes:["F","V","J","O"],
+   pergunta:{td:"Larissa, qual a letra F? ✨",tl:"Larissa, qual a letra F?"},
+   acerto:{td:"A letra do irmãozinho! Que orgulho! 🌟",tl:"A letra do irmãozinho! Que orgulho!"},
+   erro:{td:"Tente de novo, quase lá! 💙",tl:"Tente de novo, quase lá!"}},
+  {princesa:"Rapunzel",emoji:"🌺",badge:"#6a1b9a",
+   letra:"L",opcoes:["L","J","V","U"],
+   pergunta:{td:"Larissa, qual a letra L? É a sua! 🌺",tl:"Larissa, qual a letra L? É a sua!"},
+   acerto:{td:"A letra da Larissa! Você é demais! 🌟",tl:"A letra da Larissa! Você é demais!"},
+   erro:{td:"Tente mais uma vez! Vai lá! 💜",tl:"Tente mais uma vez! Vai lá!"}},
+];
+
+const BTN_COLORS = ["#ab47bc","#42a5f5","#ef5350","#66bb6a","#ffa726","#26c6da","#ec407a","#8d6e63"];
+
+let score=0, roundIdx=0, answered=false;
+let ptVoice=null;
+const synth = window.speechSynthesis;
+
+function getVoice(){
+  if(ptVoice) return ptVoice;
+  const vs = synth.getVoices();
+  ptVoice = vs.find(v=>v.lang&&v.lang.startsWith('pt'))
+           || vs.find(v=>v.lang&&v.lang.startsWith('es'))
+           || vs[0];
+  return ptVoice;
+}
+synth.onvoiceschanged=()=>{ptVoice=null;getVoice();};
+
+function speak(text, onEnd){
+  if(synth.speaking) synth.cancel();
+  const lpb = document.getElementById('lpb');
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='pt-BR'; u.rate=0.87; u.pitch=1.2;
+  const v=getVoice(); if(v) u.voice=v;
+  u.onstart=()=>lpb.classList.add('on');
+  u.onend=()=>{lpb.classList.remove('on');if(onEnd)onEnd();};
+  u.onerror=()=>{lpb.classList.remove('on');if(onEnd)onEnd();};
+  setTimeout(()=>synth.speak(u),80);
+}
+
+function makeStars(){
+  const bg=document.getElementById('sbg'); bg.innerHTML='';
+  for(let i=0;i<18;i++){
+    const s=document.createElement('div'); s.className='st';
+    s.style.left=Math.random()*96+'%'; s.style.top=Math.random()*88+'%';
+    s.style.animationDelay=(Math.random()*2.5)+'s';
+    s.style.animationDuration=(1.8+Math.random()*1.5)+'s';
+    bg.appendChild(s);
+  }
+}
+
+function updateScore(){
+  const a=document.getElementById('sca'); a.innerHTML='';
+  for(let i=0;i<score;i++){
+    const sp=document.createElement('span'); sp.className='si'; sp.textContent='⭐'; a.appendChild(sp);
+  }
+}
+
+function renderRound(){
+  answered=false;
+  const d = ROUNDS[roundIdx % ROUNDS.length];
+  document.getElementById('pav').textContent=d.emoji;
+  const pnb=document.getElementById('pnb'); pnb.textContent=d.princesa; pnb.style.background=d.badge;
+  const lhl=document.getElementById('lhl'); lhl.textContent=d.letra; lhl.style.color=d.badge; lhl.style.display='block';
+  document.getElementById('st').textContent=d.pergunta.td;
+  document.getElementById('rc').textContent='Rodada '+(roundIdx+1);
+  document.getElementById('nb').style.display='none';
+
+  const og=document.getElementById('og'); og.innerHTML=''; og.style.display='grid';
+  const shuffled=[...d.opcoes].sort(()=>Math.random()-.5);
+  shuffled.forEach((letra,i)=>{
+    const btn=document.createElement('button'); btn.className='lb';
+    btn.textContent=letra; btn.style.background=BTN_COLORS[i%BTN_COLORS.length];
+    btn.dataset.letra=letra;
+    btn.onclick=()=>handleAnswer(btn,d);
+    og.appendChild(btn);
+  });
+
+  updateScore();
+  speak(d.pergunta.tl);
+}
+
+function handleAnswer(btn, d){
+  if(answered) return; answered=true;
+  const ok = btn.dataset.letra === d.letra;
+  const pav=document.getElementById('pav');
+  if(ok){
+    score++; updateScore();
+    btn.classList.add('cf');
+    pav.classList.add('bounce'); setTimeout(()=>pav.classList.remove('bounce'),600);
+    document.getElementById('st').textContent=d.acerto.td;
+    spawnConfetti();
+    speak(d.acerto.tl,()=>{ document.getElementById('nb').style.display='block'; });
+  } else {
+    btn.classList.add('wf'); setTimeout(()=>btn.classList.remove('wf'),500);
+    pav.classList.add('shake'); setTimeout(()=>pav.classList.remove('shake'),500);
+    document.getElementById('st').textContent=d.erro.td;
+    speak(d.erro.tl,()=>{ answered=false; });
+  }
+}
+
+function spawnConfetti(){
+  const c=document.getElementById('ccon'); c.innerHTML='';
+  const cols=['#ab47bc','#42a5f5','#ef5350','#66bb6a','#ffa726','#ffee58','#ec407a'];
+  for(let i=0;i<28;i++){
+    const p=document.createElement('div'); p.className='cp';
+    p.style.background=cols[Math.floor(Math.random()*cols.length)];
+    p.style.left=(8+Math.random()*84)+'%'; p.style.top='-12px';
+    p.style.animationDuration=(.8+Math.random()*.7)+'s';
+    p.style.animationDelay=(Math.random()*.4)+'s';
+    p.style.borderRadius=Math.random()>.5?'50%':'2px';
+    c.appendChild(p);
+  }
+  setTimeout(()=>c.innerHTML='',1700);
+}
+
+function nextRound(){
+  roundIdx++;
+  document.getElementById('nb').style.display='none';
+  renderRound();
+}
+
+makeStars();
+setTimeout(()=>renderRound(),400);
+</script>
