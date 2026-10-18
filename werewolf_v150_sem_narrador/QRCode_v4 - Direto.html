@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sangue na Torre do Relógio</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .card-convite {
+      position: relative;
+      width: 450px;
+      height: 800px;
+      max-width: 100%;
+      background-color: #15161b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Bordas decorativas */
+    .card-convite::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid #8e7028;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .card-convite::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* QR Code ocupa toda a área interna */
+    .qr-code {
+      position: absolute;
+      inset: 24px;
+      width: calc(100% - 48px);
+      height: calc(100% - 48px);
+      display: block;
+      object-fit: fill;
+    }
+
+    @media (max-width: 480px) {
+      .card-convite {
+        height: auto;
+        aspect-ratio: 9 / 16;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <div class="card-convite">
+    <img
+      class="qr-code"
+      src="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=https://jordanodavila.github.io/botc_vfechado/werewolf_v150_sem_narrador/werewolf_v161_OF.html"
+      alt="QR Code para acessar o jogo"
+    >
+  </div>
+</body>
+</html>
