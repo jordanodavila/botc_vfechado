@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sangue na Torre do Relógio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: #08080b;
+      font-family: 'Montserrat', sans-serif;
+      color: #f4eee7;
+    }
+
+    .cartaz {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      width: 100%;
+      max-width: 450px;
+      min-height: 740px;
+      padding: 48px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-evenly;
+      gap: 30px;
+      text-align: center;
+
+      background:
+        radial-gradient(
+          ellipse at 50% 35%,
+          rgba(119, 12, 25, .30),
+          transparent 58%
+        ),
+        linear-gradient(
+          180deg,
+          #171015,
+          #09090d 65%,
+          #120a0d
+        );
+
+      border: 1px solid #75412e;
+
+      box-shadow:
+        0 0 35px rgba(117, 10, 22, .20),
+        inset 0 0 35px rgba(0, 0, 0, .8);
+    }
+
+    .cartaz::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border: 1px solid rgba(196, 151, 81, .45);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .abertura {
+      color: #c9a665;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      line-height: 1.8;
+      text-transform: uppercase;
+    }
+
+    .torre {
+      position: relative;
+      width: 100%;
+      padding: 25px 0;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(32px, 8.5vw, 42px);
+      line-height: 1.25;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-shadow: 0 3px 15px rgba(0, 0, 0, .9);
+    }
+
+    h1 span {
+      display: block;
+      color: #bd3039;
+    }
+
+    .qr-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .qr-frame {
+      padding: 12px;
+      background: #fff;
+      border: 2px solid #c6a05f;
+
+      box-shadow:
+        0 0 0 5px rgba(198, 160, 95, .10),
+        0 0 30px rgba(174, 23, 38, .30);
+    }
+
+    .qr-code {
+      display: block;
+      width: 210px;
+      height: 210px;
+    }
+
+    .chamada {
+      max-width: 340px;
+      color: #e23b45;
+      font-size: 21px;
+      line-height: 1.5;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    @media (max-width: 380px) {
+      .cartaz {
+        min-height: 680px;
+        padding: 38px 23px;
+        gap: 24px;
+      }
+
+      .qr-code {
+        width: 180px;
+        height: 180px;
+      }
+
+      .chamada {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="cartaz">
+
+    <p class="abertura">
+      Uma vila. Um assassino. Muitos suspeitos.
+    </p>
+
+    <header class="torre">
+      <h1>
+        Sangue na
+        <span>Torre do</span>
+        <span>Relógio</span>
+      </h1>
+    </header>
+
+    <section class="qr-area">
+      <div class="qr-frame">
+        <img
+          class="qr-code"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://jordanodavila.github.io/botc_vfechado/werewolf_v150_sem_narrador/QRCode_step2.html"
+          alt="QR Code para acessar o jogo"
+        >
+      </div>
+    </section>
+
+    <p class="chamada">
+      Quem entre nós está mentindo?
+    </p>
+
+  </main>
+</body>
+</html>
