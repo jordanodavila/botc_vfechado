@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sangue na Torre do Relógio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #09090d;
+      --red: #bd3039;
+      --gold: #c6a05f;
+      --text: #eee5dc;
+      --muted: #b8ada8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          ellipse at 50% 25%,
+          rgba(111, 14, 27, .25),
+          transparent 60%
+        ),
+        var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .pagina {
+      width: min(100%, 520px);
+      min-height: 100vh;
+      margin: auto;
+      padding: 38px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 24px;
+    }
+
+    .frase-principal {
+      color: var(--gold);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(30px, 8vw, 39px);
+      color: var(--red);
+      line-height: 1.3;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-shadow:
+        0 0 12px rgba(189, 48, 57, .25),
+        0 0 30px rgba(189, 48, 57, .12);
+    }
+
+    .descricao {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .divisor {
+      width: 75%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        #79552e,
+        transparent
+      );
+    }
+
+    .formulario {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #59403a;
+      border-radius: 5px;
+      background: #151217;
+      color: white;
+      font: inherit;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 14px rgba(198, 160, 95, .12);
+    }
+
+    input::placeholder {
+      color: #8c8180;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #d04b4f;
+      border-radius: 5px;
+      background: linear-gradient(135deg, #8e1e29, #5b1019);
+      color: white;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #b72b37, #761520);
+      box-shadow: 0 0 22px rgba(189, 48, 57, .22);
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    #mensagem {
+      min-height: 18px;
+      color: #e0b5a8;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .rodape {
+      color: #817779;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .rodape strong {
+      color: #eee2d6;
+      font-size: 12px;
+    }
+
+    /* Introdução em vídeo */
+
+    #tela-video {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+
+    #tela-video.ativa {
+      display: flex;
+    }
+
+    #video-intro {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    #status-video {
+      position: absolute;
+      bottom: 25px;
+      left: 20px;
+      right: 20px;
+      color: var(--gold);
+      font-size: 10px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    @media (max-height: 750px) {
+      .pagina {
+        padding: 24px 25px;
+        gap: 17px;
+      }
+
+      h1 {
+        font-size: clamp(27px, 7vw, 34px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="pagina">
+
+    <!-- 1. Frase de abertura -->
+    <p class="frase-principal">
+      A verdade está entre nós. O mal também.
+    </p>
+
+    <!-- 2. Destaque principal -->
+    <h1>Alguém está mentindo.</h1>
+
+    <!-- 3. Primeira provocação -->
+    <p class="descricao">
+      Você sabe em quem confiar?
+    </p>
+
+    <!-- 4. Segunda provocação -->
+    <p class="descricao">
+      Você consegue descobrir quem antes que seja tarde?
+    </p>
+
+    <div class="divisor"></div>
+
+    <!-- 5 e 6. Cadastro e entrada -->
+    <form class="formulario" id="formulario">
+      <input
+        type="text"
+        id="nome"
+        placeholder="Digite seu nome"
+        autocomplete="given-name"
+        maxlength="40"
+        required
+      >
+
+      <button type="submit" id="botao">
+        ENTRAR NA VILA
+      </button>
+
+      <p id="mensagem" role="status" aria-live="polite"></p>
+    </form>
+
+    <!-- 7 e 8. Rodapé -->
+    <p class="rodape">
+      <strong>Uma experiência entre amigos</strong><br>
+      Mistério, blefes e acusações.
+    </p>
+
+  </main>
+
+  <!-- Introdução cinematográfica -->
+  <div id="tela-video">
+    <video id="video-intro" playsinline preload="auto">
+      <source src="intro.mp4" type="video/mp4">
+    </video>
+    <p id="status-video">A VILA ESTÁ À SUA ESPERA...</p>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+  <script>
+    // 1. CONFIGURAÇÃO FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU",
+      authDomain: "werewolf-877af.firebaseapp.com",
+      projectId: "werewolf-877af",
+      storageBucket: "werewolf-877af.firebasestorage.app",
+      messagingSenderId: "177329283782",
+      databaseURL: "https://werewolf-877af-default-rtdb.firebaseio.com",
+      appId: "1:177329283782:web:30a6c6cf8732df0f802dc7"
+    };
+
+    // 2. DESTINO APÓS O VÍDEO
+    const PAGINA_DESTINO =
+      "https://jordanodavila.github.io/botc_vfechado/werewolf_v150_sem_narrador/werewolf_v161_OF.html";
+
+    // 3. TEMPO DA INTRODUÇÃO
+    const DURACAO_VIDEO_MS = 8000;
+
+    const form = document.getElementById("formulario");
+    const campoNome = document.getElementById("nome");
+    const botao = document.getElementById("botao");
+    const mensagem = document.getElementById("mensagem");
+    const telaVideo = document.getElementById("tela-video");
+    const video = document.getElementById("video-intro");
+
+    let db;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+    } catch (erro) {
+      console.error("Falha ao inicializar Firebase:", erro);
+    }
+
+    // Converte o nome para maiúsculas enquanto é digitado.
+    campoNome.addEventListener("input", () => {
+      const inicio = campoNome.selectionStart;
+      const fim = campoNome.selectionEnd;
+
+      campoNome.value =
+        campoNome.value.toLocaleUpperCase("pt-BR");
+
+      campoNome.setSelectionRange(inicio, fim);
+    });
+
+    form.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+
+      const nome = campoNome.value
+        .trim()
+        .toLocaleUpperCase("pt-BR");
+
+      if (!nome) {
+        mensagem.textContent =
+          "Digite seu nome para entrar na vila.";
+        campoNome.focus();
+        return;
+      }
+
+      if (!db) {
+        mensagem.textContent =
+          "Não foi possível conectar ao sistema. Tente novamente.";
+        return;
+      }
+
+      botao.disabled = true;
+      campoNome.disabled = true;
+      mensagem.textContent = "Registrando sua entrada...";
+
+      try {
+        // Atenção: nomes iguais usam a mesma chave.
+        await db.ref("partida/lobby/" + nome).set({
+          nome: nome,
+          status: "aguardando",
+          entradaEm: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        mensagem.textContent = "";
+        telaVideo.classList.add("ativa");
+        video.currentTime = 0;
+
+        const inicio = Date.now();
+
+        try {
+          await video.play();
+        } catch (erroVideo) {
+          console.warn("Não foi possível reproduzir o vídeo:", erroVideo);
+        }
+
+        const restante = Math.max(
+          0,
+          DURACAO_VIDEO_MS - (Date.now() - inicio)
+        );
+
+        setTimeout(() => {
+          window.location.assign(PAGINA_DESTINO);
+        }, restante);
+
+      } catch (erro) {
+        console.error("Erro ao registrar jogador:", erro);
+
+        mensagem.textContent =
+          "Não foi possível entrar. Verifique sua conexão e tente novamente.";
+
+        botao.disabled = false;
+        campoNome.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
