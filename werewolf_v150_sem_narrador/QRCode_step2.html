@@ -338,11 +338,7 @@
 
       try {
         // Atenção: nomes iguais usam a mesma chave.
-        await db.ref("partida/lobby/" + nome).set({
-          nome: nome,
-          status: "aguardando",
-          entradaEm: firebase.database.ServerValue.TIMESTAMP
-        });
+        await db.ref("partida/lobby/" + nome).set(true);
 
         mensagem.textContent = "";
         telaVideo.classList.add("ativa");
