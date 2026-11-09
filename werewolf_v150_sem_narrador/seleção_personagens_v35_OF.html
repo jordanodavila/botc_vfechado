@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BOTC – Narrador (Tela Única)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      background-color: #f4f4f9;
+    }
+
+    h2,
+    h3 {
+      text-align: center;
+      color: #333;
+    }
+
+    .section-box {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .character {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+      transition: all 0.2s;
+    }
+
+    .character small {
+      color: #222;
+      display: block;
+    }
+
+    input[type="text"] {
+      margin-top: 5px;
+      width: 95%;
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* Cores do Setup */
+    .bg-aldeao {
+      background-color: rgba(46, 125, 50, 0.15);
+      border-left: 5px solid #2e7d32;
+    }
+
+    .bg-forasteiro {
+      background-color: rgba(21, 101, 192, 0.15);
+      border-left: 5px solid #1565c0;
+    }
+
+    .bg-minion {
+      background-color: rgba(211, 47, 47, 0.15);
+      border-left: 5px solid #d32f2f;
+    }
+
+    .bg-evil {
+      background-color: rgba(183, 28, 28, 0.3);
+      border-left: 5px solid #b71c1c;
+    }
+
+    .type-badge {
+      font-size: 0.7em;
+      text-transform: uppercase;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.1);
+      margin-right: 5px;
+    }
+
+    #snackbar {
+      visibility: hidden;
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 5px;
+      z-index: 1000;
+    }
+
+    #snackbar.show {
+      visibility: visible;
+    }
+
+    /* Reordenação de Assentos */
+    .reorder-item {
+      transition: all 0.2s;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    .reorder-item.selected {
+      background-color: #fff9c4 !important;
+      border: 2px solid #fbc02d !important;
+      transform: scale(1.02);
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+
+  <h2>📜 Painel do Narrador – BOTC</h2>
+
+  <!-- Tabela Guia de Composição -->
+  <div class="section-box" style="border: 2px solid #5D4037;">
+    <div
+      style="color: #5D4037; border-bottom: 2px solid #5D4037; margin-bottom: 10px; font-weight: bold; text-align: center;">
+      👥 Guia de Configuração da Partida (Setup)
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13px;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 6px;">Jogadores</th>
+            <th style="border: 1px solid #ddd; padding: 6px; color: #1E88E5;">Aldeões</th>
+            <th style="border: 1px solid #ddd; padding: 6px; color: #0288D1;">Forasteiros</th>
+            <th style="border: 1px solid #ddd; padding: 6px; color: #B71C1C;">Minions</th>
+            <th style="border: 1px solid #ddd; padding: 6px; color: #d50000;">Monstro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>5</td>
+            <td style="color: #1E88E5;">3</td>
+            <td>0</td>
+            <td style="color: #B71C1C;">1</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td style="color: #1E88E5;">3</td>
+            <td>1</td>
+            <td style="color: #B71C1C;">1</td>
+            <td>1</td>
+          </tr>
+          <tr style="background-color: #E3F2FD;">
+            <td>7</td>
+            <td style="color: #1E88E5;">5</td>
+            <td>0</td>
+            <td style="color: #B71C1C;">1</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td style="color: #1E88E5;">5</td>
+            <td>1</td>
+            <td style="color: #B71C1C;">1</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td style="color: #1E88E5;">5</td>
+            <td>2</td>
+            <td style="color: #B71C1C;">1</td>
+            <td>1</td>
+          </tr>
+          <tr style="background-color: #E3F2FD;">
+            <td>10</td>
+            <td style="color: #1E88E5;">7</td>
+            <td>0</td>
+            <td style="color: #B71C1C;">2</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td style="color: #1E88E5;">7</td>
+            <td>1</td>
+            <td style="color: #B71C1C;">2</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td style="color: #1E88E5;">7</td>
+            <td>2</td>
+            <td style="color: #B71C1C;">2</td>
+            <td>1</td>
+          </tr>
+          <tr style="background-color: #E3F2FD;">
+            <td>13+</td>
+            <td style="color: #1E88E5;">9</td>
+            <td>0-2</td>
+            <td style="color: #B71C1C;">3</td>
+            <td>1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ações Globais / Firebase -->
+  <div class="section-box">
+    <h3>⚙️ Ações e Integração Firebase</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+      <button onclick="carregarNomesLobbyFirebase()" style="background-color: #7b1fa2; color: white;">👥 Carregar do
+        Lobby</button>
+      <button onclick="editarPartidaFirebase()" style="background-color: #ff9800; color: white;">✏️ Editar Partida
+        Atual</button>
+      <button onclick="abrirReordenacao()" style="background-color: #2196F3; color: white;">🔄 Reordenar
+        Assentos</button>
+      <button onclick="limparPartidaFirebase()" style="background-color: #f44336; color: white;">🗑️ Resetar
+        Partida</button>
+    </div>
+  </div>
+
+  <div style="margin-top: 10px; background: #e8eaf6; padding: 10px; border-radius: 8px; border: 1px solid #c5cae9;">
+    <label for="selectJogosProntos" style="font-weight: bold; color: #1a237e;">🎯 Carregar Partida Pré-configurada
+      (Preset):</label>
+    <select id="selectJogosProntos" onchange="carregarJogoPronto(this.value)"
+      style="width: 100%; padding: 8px; margin-top: 5px; font-weight: bold;">
+      <option value="">-- Escolha um jogo pronto --</option>
+    </select>
+  </div>
+
+  <!-- Painel de Sorteio Dinâmico -->
+  <div class="section-box" style="border: 1px dashed #5D4037; background: #fffde7;">
+    <h3>🎲 Painel de Sorteio e Lista de Jogadores</h3>
+    <label>Nomes dos Jogadores (um por linha):</label>
+    <textarea id="listaNomesSorteio" rows="5" style="width: 98%; margin-top: 5px; padding: 5px;"
+      placeholder="Ex:&#10;João&#10;Maria&#10;Pedro..."></textarea>
+
+    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+      <button onclick="gerarSorteioCego()" style="background-color: #4CAF50; color: white; flex: 1; min-width: 220px;">
+        🙈 Sorteio Cego (Envia Direto p/ Firebase)
+      </button>
+      <button onclick="sortearApenasCheckboxes()"
+        style="background-color: #00897B; color: white; flex: 1; min-width: 220px;">
+        📋 Sortear nos Checkboxes (Modo Narrador)
+      </button>
+    </div>
+  </div>
+
+  <!-- Reordenação de Assentos (Modal/Div oculta) -->
+  <div id="reorder-container" class="section-box" style="display:none; background: #fff;">
+    <h3 style="color: #5D4037; margin-top: 0;">🔄 Reordenar Assentos</h3>
+    <p style="font-size: 12px; color: #666;">Clique em dois jogadores sequencialmente para inverter a posição deles na
+      mesa.</p>
+    <div id="reorder-list" style="margin-bottom: 15px;"></div>
+    <button onclick="salvarNovaOrdem()" style="background-color: #4CAF50; color: white;">💾 Salvar Nova Ordem</button>
+    <button onclick="document.getElementById('reorder-container').style.display='none'"
+      style="background-color: #9e9e9e; color: white;">Cancelar</button>
+  </div>
+
+  <!-- Configuração Manual de Personagens (TELA ÚNICA) -->
+  <div class="section-box">
+    <h3>🎭 Seleção Manual de Personagens</h3>
+
+    <div
+      style="display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 15px;">
+      <div>
+        <label for="numPlayers" style="font-weight: bold;">Slots / Total de Jogadores:</label>
+        <input type="number" id="numPlayers" value="5" min="5" max="15"
+          style="width: 60px; padding: 5px; text-align: center;">
+      </div>
+
+      <div style="flex: 1; min-width: 200px;">
+        <label for="edicaoFiltro" style="font-weight: bold;">Edição:</label>
+        <select id="edicaoFiltro" style="width: 100%; padding: 6px;">
+          <option value="todos">Todos os Lançamentos</option>
+          <option value="trouble brewing" selected>Trouble Brewing</option>
+          <option value="bad moon rising">Bad Moon Rising</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Seletor do Bêbado (Drunk) -->
+    <div
+      style="margin-bottom: 15px; padding: 10px; border: 1px solid #795548; border-radius: 8px; background-color: #efebe9;">
+      <label for="selectDrunk" style="color: #5d4037; font-weight: bold;">🧧 Configuração do Bêbado (Drunk):</label>
+      <select id="selectDrunk" style="width: 100%; padding: 6px; margin-top: 5px;">
+        <option value="AUTO">🎲 Aleatório (Qualquer Aldeão em jogo)</option>
+        <option value="">Ninguém é o Bêbado</option>
+      </select>
+      <p style="font-size: 11px; color: #795548; margin-top: 5px; margin-bottom: 0;">
+        * No modo "Aleatório", o sistema escolherá um dos Aldeões da partida para atuar como Bêbado sem revelar na
+        interface.
+      </p>
+    </div>
+
+    <!-- Painel Tracker -->
+    <div id="setup-tracker"
+      style="display: flex; justify-content: space-around; background: #fafafa; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-bottom: 15px; font-size: 13px; font-weight: bold; text-align: center;">
+      <div style="color: #1b5e20;">Aldeões: <span id="track-aldeao">0/3</span></div>
+      <div style="color: #0d47a1;">Forasteiros: <span id="track-forasteiro">0/0</span></div>
+      <div style="color: #b71c1c;">Minions: <span id="track-minion">0/1</span></div>
+      <div style="color: #d50000;">Monstro: <span id="track-evil">0/1</span></div>
+    </div>
+
+    <!-- Lista de Personagens -->
+    <div id="characters"></div>
+
+    <!-- Botões Finais na Mesma Tela -->
+    <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <button onclick="enviarParaFirebaseManual()"
+        style="background-color: #673ab7; color: white; flex: 2; min-width: 200px; font-size: 16px;">
+        🚀 Enviar Seleção Manual ao Firebase
+      </button>
+      <button onclick="downloadGame()" style="background-color: #607d8b; color: white; flex: 1; min-width: 140px;">
+        💾 Baixar Backup JSON
+      </button>
+    </div>
+  </div>
+
+  <div id="snackbar"></div>
+
+  <script>
+    const _0x2075f7=_0x3780;(function(_0x3ddcac,_0x31b3fa){const _0x174c78=_0x3780,_0xd00cc1=_0x3ddcac();while(!![]){try{const _0x4ae478=-parseInt(_0x174c78(0x151))/0x1+parseInt(_0x174c78(0x117))/0x2*(-parseInt(_0x174c78(0x174))/0x3)+-parseInt(_0x174c78(0x152))/0x4+-parseInt(_0x174c78(0xea))/0x5+-parseInt(_0x174c78(0x13d))/0x6+parseInt(_0x174c78(0xc2))/0x7+-parseInt(_0x174c78(0x16d))/0x8*(-parseInt(_0x174c78(0xf7))/0x9);if(_0x4ae478===_0x31b3fa)break;else _0xd00cc1['push'](_0xd00cc1['shift']());}catch(_0x329c13){_0xd00cc1['push'](_0xd00cc1['shift']());}}}(_0x2950,0xc7db2));const firebaseConfig={'apiKey':_0x2075f7(0x140),'authDomain':'werewolf-877af.firebaseapp.com','projectId':_0x2075f7(0x14b),'storageBucket':_0x2075f7(0xe4),'messagingSenderId':_0x2075f7(0x123),'appId':_0x2075f7(0x10f)};firebase[_0x2075f7(0x18d)](firebaseConfig);function _0x3780(_0x4a6a0e,_0xc248f6){_0x4a6a0e=_0x4a6a0e-0x97;const _0x29501c=_0x2950();let _0x378086=_0x29501c[_0x4a6a0e];return _0x378086;}const db=firebase[_0x2075f7(0x171)](),PERSONAGENS=[{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x17d),'habilidade':_0x2075f7(0x18f)},{'edicao':'trouble\x20brewing','tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x13b),'habilidade':_0x2075f7(0xfd)},{'edicao':_0x2075f7(0xaa),'tipo':'Aldeão','nome':_0x2075f7(0x172),'habilidade':_0x2075f7(0xcc)},{'edicao':_0x2075f7(0xaa),'tipo':'Aldeão','nome':_0x2075f7(0xf4),'habilidade':_0x2075f7(0x129)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0xdc),'habilidade':_0x2075f7(0x11c)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x145),'nome':'Cartomante','habilidade':_0x2075f7(0x176)},{'edicao':'trouble\x20brewing','tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x10d),'habilidade':_0x2075f7(0xd8)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x178),'habilidade':_0x2075f7(0xba)},{'edicao':_0x2075f7(0xaa),'tipo':'Aldeão','nome':_0x2075f7(0x147),'habilidade':'Se\x20você\x20morrer\x20à\x20noite,\x20será\x20acordado\x20para\x20escolher\x20um\x20jogador\x20e\x20aprender\x20o\x20personagem\x20dele.'},{'edicao':'trouble\x20brewing','tipo':'Aldeão','nome':_0x2075f7(0x99),'habilidade':_0x2075f7(0xfb)},{'edicao':'trouble\x20brewing','tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x10e),'habilidade':_0x2075f7(0xf5)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x14c),'habilidade':_0x2075f7(0xcd)},{'edicao':'trouble\x20brewing','tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x12c),'habilidade':'Se\x20apenas\x20três\x20jogadores\x20viverem\x20e\x20nenhuma\x20execução\x20ocorrer,\x20sua\x20equipe\x20vence.\x0a\x20Se\x20você\x20morrer\x20à\x20noite,\x20outro\x20jogador\x20do\x20bem\x20pode\x20morrer\x20no\x20seu\x20lugar.'},{'edicao':_0x2075f7(0x189),'tipo':'Aldeão','nome':_0x2075f7(0x170),'habilidade':'Você\x20começa\x20sabendo\x20um\x20jogador\x20bom\x20e\x20o\x20personagem\x20dele.\x0aSe\x20o\x20Monstro\x20matá-lo,\x20você\x20morre\x20também.'},{'edicao':_0x2075f7(0x189),'tipo':'Aldeão','nome':_0x2075f7(0x155),'habilidade':_0x2075f7(0xbd)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x14f),'habilidade':_0x2075f7(0xae)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x145),'nome':'Estalajadeiro','habilidade':'Cada\x20noite,\x20escolha\x202\x20jogadores:\x20eles\x20estão\x20a\x20salvo\x20do\x20Monstro,\x20mas\x20um\x20deles\x20fica\x20bêbado\x20até\x20o\x20próximo\x20anoitecer.'},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x11e),'habilidade':'Cada\x20noite\x20(exceto\x20a\x20primeira),\x20escolha\x20um\x20jogador\x20(diferente\x20da\x20noite\x20anterior):\x20o\x20Mal,\x20se\x20escolhido,\x20descobre\x20quem\x20você\x20é\x20e\x20então\x20não\x20acorda\x20esta\x20noite.'},{'edicao':_0x2075f7(0x189),'tipo':'Aldeão','nome':'Cortesão','habilidade':_0x2075f7(0x142)},{'edicao':'bad\x20moon\x20rising','tipo':_0x2075f7(0x145),'nome':_0x2075f7(0xf6),'habilidade':_0x2075f7(0x14a)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0xc6),'habilidade':_0x2075f7(0x133)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0xa5),'habilidade':_0x2075f7(0x107)},{'edicao':'bad\x20moon\x20rising','tipo':'Aldeão','nome':_0x2075f7(0x158),'habilidade':'Se\x20seus\x20dois\x20vizinhos\x20vivos\x20forem\x20aldeões,\x20eles\x20não\x20podem\x20morrer\x20enquanto\x20você\x20estiver\x20vivo.'},{'edicao':_0x2075f7(0x189),'tipo':'Aldeão','nome':_0x2075f7(0x18c),'habilidade':'Jogadores\x20do\x20bem\x20podem\x20não\x20morrer\x20ao\x20serem\x20executados.'},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x145),'nome':_0x2075f7(0x132),'habilidade':_0x2075f7(0xac)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x148),'nome':_0x2075f7(0xc0),'habilidade':_0x2075f7(0xa9)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x148),'nome':'Recluso','habilidade':_0x2075f7(0x98)},{'edicao':'trouble\x20brewing','tipo':_0x2075f7(0x148),'nome':_0x2075f7(0x157),'habilidade':_0x2075f7(0x13c)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x148),'nome':_0x2075f7(0x183),'habilidade':_0x2075f7(0x110)},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x190),'nome':_0x2075f7(0x162),'habilidade':_0x2075f7(0x11d)},{'edicao':_0x2075f7(0xaa),'tipo':'Minion','nome':'Espião','habilidade':_0x2075f7(0xb5)},{'edicao':_0x2075f7(0xaa),'tipo':'Minion','nome':_0x2075f7(0x18a),'habilidade':_0x2075f7(0xda)},{'edicao':_0x2075f7(0xaa),'tipo':'Minion','nome':_0x2075f7(0x114),'habilidade':_0x2075f7(0x168)},{'edicao':_0x2075f7(0x189),'tipo':'Minion','nome':'Padrinho','habilidade':'Você\x20sabe\x20quais\x20Forasteiros\x20estão\x20no\x20jogo.\x20Se\x20um\x20Forasteiro\x20morrer\x20durante\x20o\x20dia,\x20você\x20mata\x20alguém\x20à\x20noite.'},{'edicao':'bad\x20moon\x20rising','tipo':_0x2075f7(0x190),'nome':'Advogado\x20do\x20Diabo','habilidade':_0x2075f7(0x10c)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x190),'nome':_0x2075f7(0xb7),'habilidade':'Uma\x20vez\x20por\x20jogo,\x20à\x20noite,\x20escolha\x20um\x20jogador:\x20ele\x20morre,\x20mesmo\x20que\x20esteja\x20protegido.'},{'edicao':'bad\x20moon\x20rising','tipo':_0x2075f7(0x190),'nome':_0x2075f7(0xf1),'habilidade':'Se\x20o\x20Monstro\x20morrer\x20por\x20execução\x20(encerrando\x20o\x20jogo),\x20jogue\x20por\x20mais\x201\x20dia.\x20Se\x20um\x20jogador\x20for\x20executado\x20em\x20seguida,\x20o\x20time\x20do\x20mal\x20vence.'},{'edicao':_0x2075f7(0xaa),'tipo':_0x2075f7(0x184),'nome':_0x2075f7(0x17f),'habilidade':_0x2075f7(0xad)},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x184),'nome':_0x2075f7(0xed),'habilidade':'Cada\x20noite,\x20escolha\x20um\x20jogador\x20para\x20morrer.\x20Se\x20você\x20não\x20escolher\x20ninguém,\x20na\x20próxima\x20noite\x20escolha\x203\x20jogadores.'},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x184),'nome':_0x2075f7(0x16e),'habilidade':_0x2075f7(0xc4)},{'edicao':'bad\x20moon\x20rising','tipo':'Evil','nome':_0x2075f7(0x131),'habilidade':'Cada\x20noite,\x20escolha\x20um\x20jogador:\x20ele\x20fica\x20envenenado.\x20O\x20jogador\x20envenenado\x20anteriormente\x20morre\x20e\x20fica\x20saudável.'},{'edicao':_0x2075f7(0x189),'tipo':_0x2075f7(0x184),'nome':_0x2075f7(0xca),'habilidade':_0x2075f7(0x109)}],JOGOS_PRONTOS={'jogo1':{'nome':_0x2075f7(0x186),'numJogadores':0x5,'edicao':_0x2075f7(0xaa),'jogadores':[{'personagem':_0x2075f7(0x17d),'jogador':_0x2075f7(0x15c)},{'personagem':'Empata','jogador':_0x2075f7(0xdb)},{'personagem':_0x2075f7(0x10e),'jogador':_0x2075f7(0x128)},{'personagem':_0x2075f7(0x162),'jogador':_0x2075f7(0x11b)},{'personagem':_0x2075f7(0x17f),'jogador':_0x2075f7(0xb6)}],'drunk':''},'jogo2':{'nome':_0x2075f7(0xd0),'numJogadores':0x7,'edicao':'trouble\x20brewing','jogadores':[{'personagem':_0x2075f7(0x172),'jogador':_0x2075f7(0x15c)},{'personagem':_0x2075f7(0xf4),'jogador':_0x2075f7(0xdb)},{'personagem':_0x2075f7(0x99),'jogador':_0x2075f7(0x128)},{'personagem':_0x2075f7(0x10d),'jogador':_0x2075f7(0x160)},{'personagem':_0x2075f7(0x14c),'jogador':_0x2075f7(0x12f)},{'personagem':_0x2075f7(0x114),'jogador':'LUCAS'},{'personagem':_0x2075f7(0x17f),'jogador':'CARLA'}],'drunk':_0x2075f7(0x172)},'jogo3':{'nome':_0x2075f7(0x137),'numJogadores':0x5,'edicao':'bad\x20moon\x20rising','jogadores':[{'personagem':_0x2075f7(0x170),'jogador':'JOÃO'},{'personagem':_0x2075f7(0x155),'jogador':'MARIA'},{'personagem':_0x2075f7(0xf6),'jogador':_0x2075f7(0x128)},{'personagem':_0x2075f7(0xb7),'jogador':'LUCAS'},{'personagem':_0x2075f7(0xed),'jogador':_0x2075f7(0xb6)}],'drunk':''}},charactersDiv=document['getElementById']('characters'),edicaoFiltroSelect=document['getElementById'](_0x2075f7(0x116));function renderizarPersonagens(){const _0x1f86cc=_0x2075f7,_0x350e33={};document[_0x1f86cc(0x126)]('.character')['forEach'](_0xe9a48c=>{const _0x49e64a=_0x1f86cc,_0x217f53=_0xe9a48c[_0x49e64a(0x14e)](_0x49e64a(0x18e)),_0x238de6=_0xe9a48c['querySelector'](_0x49e64a(0x103));_0x217f53&&_0x217f53[_0x49e64a(0x17a)]&&(_0x350e33[_0x217f53['dataset']['name']]=_0x238de6?_0x238de6[_0x49e64a(0xbf)]:'');}),charactersDiv['innerHTML']='';const _0x3d77b4=edicaoFiltroSelect[_0x1f86cc(0xbf)];PERSONAGENS[_0x1f86cc(0x9b)](_0x3b677c=>{const _0x788efa=_0x1f86cc;if(_0x3d77b4!=='todos'&&_0x3b677c['edicao']!==_0x3d77b4)return;const _0x1ff5f2=document[_0x788efa(0xe3)](_0x788efa(0x134));let _0x5d8199='';switch(_0x3b677c['tipo']){case _0x788efa(0x145):_0x5d8199=_0x788efa(0xf8);break;case'Forasteiro':_0x5d8199=_0x788efa(0xc7);break;case _0x788efa(0x190):_0x5d8199='bg-minion';break;case _0x788efa(0x184):_0x5d8199=_0x788efa(0x12e);break;}_0x1ff5f2[_0x788efa(0x180)]=_0x788efa(0xeb)+_0x5d8199,_0x1ff5f2[_0x788efa(0x146)]=_0x788efa(0xbe)+_0x3b677c[_0x788efa(0xb2)]+_0x788efa(0x150)+_0x3b677c[_0x788efa(0x9a)]+_0x788efa(0x159)+_0x3b677c[_0x788efa(0x9a)]+_0x788efa(0xa0)+_0x3b677c['nome']+_0x788efa(0x97)+_0x3b677c[_0x788efa(0xf9)]+_0x788efa(0x120);const _0x4cd71b=_0x1ff5f2[_0x788efa(0x14e)](_0x788efa(0x18e)),_0x5e884a=_0x1ff5f2['querySelector'](_0x788efa(0x103));_0x350e33['hasOwnProperty'](_0x3b677c[_0x788efa(0xb2)])&&(_0x4cd71b[_0x788efa(0x17a)]=!![],_0x5e884a['style'][_0x788efa(0x188)]='block',_0x5e884a['value']=_0x350e33[_0x3b677c[_0x788efa(0xb2)]]),_0x4cd71b['onchange']=()=>{const _0x548db7=_0x788efa;_0x5e884a['style'][_0x548db7(0x188)]=_0x4cd71b[_0x548db7(0x17a)]?_0x548db7(0x13a):_0x548db7(0xe9);if(!_0x4cd71b[_0x548db7(0x17a)])_0x5e884a['value']='';atualizarTrackerSetup(),atualizarOpcoesDrunk();},charactersDiv[_0x788efa(0x16a)](_0x1ff5f2);}),atualizarTrackerSetup(),atualizarOpcoesDrunk();}edicaoFiltroSelect[_0x2075f7(0x15e)](_0x2075f7(0x136),renderizarPersonagens),renderizarPersonagens();function showMsg(_0xbcf252,_0x562144=![]){const _0x111b98=_0x2075f7,_0x5a2bc4=document['getElementById'](_0x111b98(0xee));_0x5a2bc4[_0x111b98(0x139)]=_0xbcf252,_0x5a2bc4[_0x111b98(0x138)][_0x111b98(0x149)]=_0x562144?_0x111b98(0x13f):'#4CAF50',_0x5a2bc4[_0x111b98(0x180)]='show',setTimeout(()=>_0x5a2bc4[_0x111b98(0x180)]='',0xbb8);}function atualizarTrackerSetup(){const _0x14ee06=_0x2075f7,_0x4e6322=parseInt(document[_0x14ee06(0x104)](_0x14ee06(0x154))[_0x14ee06(0xbf)],0xa)||0x5,_0x23473c={0x5:{'a':0x3,'f':0x0,'m':0x1,'e':0x1},0x6:{'a':0x3,'f':0x1,'m':0x1,'e':0x1},0x7:{'a':0x5,'f':0x0,'m':0x1,'e':0x1},0x8:{'a':0x5,'f':0x1,'m':0x1,'e':0x1},0x9:{'a':0x5,'f':0x2,'m':0x1,'e':0x1},0xa:{'a':0x7,'f':0x0,'m':0x2,'e':0x1},0xb:{'a':0x7,'f':0x1,'m':0x2,'e':0x1},0xc:{'a':0x7,'f':0x2,'m':0x2,'e':0x1},0xd:{'a':0x9,'f':0x0,'m':0x3,'e':0x1},0xe:{'a':0x9,'f':0x1,'m':0x3,'e':0x1}},_0xfb001c=_0x23473c[_0x4e6322]||{'a':0x9,'f':0x2,'m':0x3,'e':0x1},_0x1d1164={'Aldeão':0x0,'Forasteiro':0x0,'Minion':0x0,'Evil':0x0};document[_0x14ee06(0x126)](_0x14ee06(0x115))[_0x14ee06(0x9b)](_0xdb9865=>{const _0x377ded=_0x14ee06,_0x5835b8=_0xdb9865[_0x377ded(0xe0)][_0x377ded(0x9a)];if(_0x1d1164[_0x5835b8]!==undefined)_0x1d1164[_0x5835b8]++;}),document['getElementById'](_0x14ee06(0xd2))['innerText']=_0x1d1164[_0x14ee06(0x145)]+'/'+_0xfb001c['a'],document[_0x14ee06(0x104)](_0x14ee06(0x16b))['innerText']=_0x1d1164[_0x14ee06(0x148)]+'/'+_0xfb001c['f'],document[_0x14ee06(0x104)](_0x14ee06(0x12d))[_0x14ee06(0x139)]=_0x1d1164[_0x14ee06(0x190)]+'/'+_0xfb001c['m'],document[_0x14ee06(0x104)](_0x14ee06(0x164))[_0x14ee06(0x139)]=_0x1d1164['Evil']+'/'+_0xfb001c['e'];}document[_0x2075f7(0x104)](_0x2075f7(0x154))[_0x2075f7(0x15e)](_0x2075f7(0xbc),atualizarTrackerSetup),atualizarTrackerSetup();function atualizarOpcoesDrunk(){const _0x380633=_0x2075f7,_0x576bf9=document[_0x380633(0x104)]('selectDrunk'),_0x1d34c9=_0x576bf9['value'];_0x576bf9[_0x380633(0x146)]=_0x380633(0xf2),document[_0x380633(0x126)](_0x380633(0x115))[_0x380633(0x9b)](_0x1be323=>{const _0x1cbff9=_0x380633;if(_0x1be323[_0x1cbff9(0xe0)][_0x1cbff9(0x9a)]===_0x1cbff9(0x145)){const _0x37b668=_0x1be323[_0x1cbff9(0xe0)][_0x1cbff9(0x10b)],_0x170957=_0x1be323['closest'](_0x1cbff9(0x173)),_0x4a45fd=_0x170957[_0x1cbff9(0x14e)]('input[type=\x22text\x22]')[_0x1cbff9(0xbf)],_0x45340d=_0x4a45fd?_0x37b668+'\x20('+_0x4a45fd+')':_0x37b668,_0x55b437=document['createElement'](_0x1cbff9(0x153));_0x55b437[_0x1cbff9(0xbf)]=_0x37b668,_0x55b437[_0x1cbff9(0x135)]=_0x45340d,_0x576bf9[_0x1cbff9(0x16a)](_0x55b437);}}),_0x576bf9['value']=_0x1d34c9;}function extrairNomesValidos(){const _0x2dbb75=_0x2075f7,_0x35fe1e=document[_0x2dbb75(0x104)](_0x2dbb75(0xd3))['value'][_0x2dbb75(0x156)]();if(!_0x35fe1e)return[];return _0x35fe1e[_0x2dbb75(0xa3)]('\x0a')['map'](_0x24b6bf=>_0x24b6bf[_0x2dbb75(0x156)]()[_0x2dbb75(0x166)]())[_0x2dbb75(0xa6)](_0x25e988=>_0x25e988!=='');}function gerarSorteioCego(){const _0x519174=_0x2075f7,_0x4272e3=extrairNomesValidos();if(_0x4272e3[_0x519174(0xe6)]<0x5){showMsg('Insira\x20pelo\x20menos\x205\x20nomes\x20para\x20realizar\x20o\x20sorteio.',!![]);return;}const _0x3f0b77=_0x4272e3[_0x519174(0xe6)];let _0xe89414=_0x3f0b77,_0x439402={'aldeao':0x0,'forasteiro':0x0,'minion':0x0,'evil':0x1};if(_0xe89414===0x5)_0x439402[_0x519174(0xb0)]=0x3,_0x439402[_0x519174(0xa4)]=0x1;else{if(_0xe89414===0x6)_0x439402[_0x519174(0xb0)]=0x3,_0x439402[_0x519174(0x169)]=0x1,_0x439402[_0x519174(0xa4)]=0x1;else{if(_0xe89414===0x7)_0x439402['aldeao']=0x5,_0x439402[_0x519174(0xa4)]=0x1;else{if(_0xe89414===0x8)_0x439402[_0x519174(0xb0)]=0x5,_0x439402[_0x519174(0x169)]=0x1,_0x439402[_0x519174(0xa4)]=0x1;else{if(_0xe89414===0x9)_0x439402[_0x519174(0xb0)]=0x5,_0x439402[_0x519174(0x169)]=0x2,_0x439402[_0x519174(0xa4)]=0x1;else{if(_0xe89414===0xa)_0x439402['aldeao']=0x7,_0x439402[_0x519174(0xa4)]=0x2;else{if(_0xe89414===0xb)_0x439402[_0x519174(0xb0)]=0x7,_0x439402[_0x519174(0x169)]=0x1,_0x439402['minion']=0x2;else{if(_0xe89414===0xc)_0x439402[_0x519174(0xb0)]=0x7,_0x439402[_0x519174(0x169)]=0x2,_0x439402[_0x519174(0xa4)]=0x2;else _0xe89414>=0xd&&(_0x439402[_0x519174(0xa4)]=0x3,_0x439402[_0x519174(0x169)]=_0xe89414===0xd?0x0:_0xe89414===0xe?0x1:0x2,_0x439402[_0x519174(0xb0)]=_0xe89414-_0x439402[_0x519174(0xa4)]-_0x439402[_0x519174(0x169)]-0x1);}}}}}}}const _0x206d3c=edicaoFiltroSelect[_0x519174(0xbf)],_0x44db32=_0x206d3c===_0x519174(0xa2)?PERSONAGENS:PERSONAGENS[_0x519174(0xa6)](_0x4798c1=>_0x4798c1[_0x519174(0xb9)]===_0x206d3c),_0x3f2b25=_0x44db32['filter'](_0x38dc67=>_0x38dc67['tipo']===_0x519174(0x145))[_0x519174(0xdf)](()=>Math[_0x519174(0x119)]()-0.5),_0x111fed=_0x44db32['filter'](_0x539ef9=>_0x539ef9[_0x519174(0x9a)]===_0x519174(0x148))[_0x519174(0xdf)](()=>Math[_0x519174(0x119)]()-0.5),_0x4e38ce=_0x44db32[_0x519174(0xa6)](_0x97d1db=>_0x97d1db[_0x519174(0x9a)]==='Minion')[_0x519174(0xdf)](()=>Math[_0x519174(0x119)]()-0.5),_0x345fde=_0x44db32[_0x519174(0xa6)](_0xc9849c=>_0xc9849c[_0x519174(0x9a)]==='Evil')[_0x519174(0xdf)](()=>Math[_0x519174(0x119)]()-0.5);if(_0x3f2b25[_0x519174(0xe6)]<_0x439402[_0x519174(0xb0)]||_0x4e38ce[_0x519174(0xe6)]<_0x439402[_0x519174(0xa4)]||_0x345fde[_0x519174(0xe6)]<_0x439402[_0x519174(0xc5)]){showMsg('Personagens\x20insuficientes\x20na\x20edição\x20\x22'+_0x206d3c['toUpperCase']()+'\x22!',!![]);return;}let _0x3455c5=[];for(let _0x2996ce=0x0;_0x2996ce<_0x439402[_0x519174(0xc5)];_0x2996ce++)_0x3455c5[_0x519174(0x18b)](_0x345fde[_0x519174(0x105)]());for(let _0x31c39b=0x0;_0x31c39b<_0x439402[_0x519174(0xa4)];_0x31c39b++)_0x3455c5[_0x519174(0x18b)](_0x4e38ce['pop']());for(let _0x8fbb9b=0x0;_0x8fbb9b<_0x439402[_0x519174(0x169)];_0x8fbb9b++)_0x3455c5[_0x519174(0x18b)](_0x111fed[_0x519174(0x105)]());for(let _0x4a960a=0x0;_0x4a960a<_0x439402[_0x519174(0xb0)];_0x4a960a++)_0x3455c5[_0x519174(0x18b)](_0x3f2b25[_0x519174(0x105)]());const _0x383d43=[..._0x4272e3][_0x519174(0xdf)](()=>Math[_0x519174(0x119)]()-0.5);_0x3455c5[_0x519174(0xdf)](()=>Math['random']()-0.5);const _0x46bc74=_0x383d43['map']((_0x52fa7c,_0xee3e93)=>({'personagem':_0x3455c5[_0xee3e93][_0x519174(0xb2)],'tipo':_0x3455c5[_0xee3e93][_0x519174(0x9a)],'jogador':_0x52fa7c,'habilidade':_0x3455c5[_0xee3e93]['habilidade']}));let _0x21fe39=document[_0x519174(0x104)]('selectDrunk')[_0x519174(0xbf)];if(_0x21fe39==='AUTO'){const _0x37803b=_0x46bc74[_0x519174(0xa6)](_0x54a223=>_0x54a223[_0x519174(0x9a)]===_0x519174(0x145));_0x37803b[_0x519174(0xe6)]>0x0?_0x21fe39=_0x37803b[Math[_0x519174(0x185)](Math['random']()*_0x37803b[_0x519174(0xe6)])][_0x519174(0xe2)]:_0x21fe39='';}salvarEEnviarFirebase(_0x46bc74,_0x21fe39),showMsg(_0x519174(0xb8));}function sortearApenasCheckboxes(){const _0x3bd2b2=_0x2075f7,_0x1be282=extrairNomesValidos();if(_0x1be282[_0x3bd2b2(0xe6)]<0x5){showMsg(_0x3bd2b2(0x10a),!![]);return;}const _0x5138b7=_0x1be282[_0x3bd2b2(0xe6)];let _0x3c8f24={'aldeao':0x0,'forasteiro':0x0,'minion':0x0,'evil':0x1};if(_0x5138b7===0x5)_0x3c8f24[_0x3bd2b2(0xb0)]=0x3,_0x3c8f24[_0x3bd2b2(0xa4)]=0x1;else{if(_0x5138b7===0x6)_0x3c8f24['aldeao']=0x3,_0x3c8f24[_0x3bd2b2(0x169)]=0x1,_0x3c8f24[_0x3bd2b2(0xa4)]=0x1;else{if(_0x5138b7===0x7)_0x3c8f24[_0x3bd2b2(0xb0)]=0x5,_0x3c8f24[_0x3bd2b2(0xa4)]=0x1;else{if(_0x5138b7===0x8)_0x3c8f24[_0x3bd2b2(0xb0)]=0x5,_0x3c8f24['forasteiro']=0x1,_0x3c8f24[_0x3bd2b2(0xa4)]=0x1;else{if(_0x5138b7===0x9)_0x3c8f24[_0x3bd2b2(0xb0)]=0x5,_0x3c8f24[_0x3bd2b2(0x169)]=0x2,_0x3c8f24[_0x3bd2b2(0xa4)]=0x1;else{if(_0x5138b7===0xa)_0x3c8f24[_0x3bd2b2(0xb0)]=0x7,_0x3c8f24[_0x3bd2b2(0xa4)]=0x2;else{if(_0x5138b7===0xb)_0x3c8f24[_0x3bd2b2(0xb0)]=0x7,_0x3c8f24['forasteiro']=0x1,_0x3c8f24['minion']=0x2;else{if(_0x5138b7===0xc)_0x3c8f24[_0x3bd2b2(0xb0)]=0x7,_0x3c8f24[_0x3bd2b2(0x169)]=0x2,_0x3c8f24[_0x3bd2b2(0xa4)]=0x2;else _0x5138b7>=0xd&&(_0x3c8f24[_0x3bd2b2(0xa4)]=0x3,_0x3c8f24[_0x3bd2b2(0x169)]=_0x5138b7===0xd?0x0:_0x5138b7===0xe?0x1:0x2,_0x3c8f24[_0x3bd2b2(0xb0)]=_0x5138b7-_0x3c8f24[_0x3bd2b2(0xa4)]-_0x3c8f24[_0x3bd2b2(0x169)]-0x1);}}}}}}}const _0x1b0462=edicaoFiltroSelect[_0x3bd2b2(0xbf)],_0x135bf4=_0x1b0462===_0x3bd2b2(0xa2)?PERSONAGENS:PERSONAGENS[_0x3bd2b2(0xa6)](_0x2fa272=>_0x2fa272[_0x3bd2b2(0xb9)]===_0x1b0462),_0x38eb19=_0x135bf4[_0x3bd2b2(0xa6)](_0x3a2fc8=>_0x3a2fc8[_0x3bd2b2(0x9a)]===_0x3bd2b2(0x145))['sort'](()=>Math[_0x3bd2b2(0x119)]()-0.5),_0xadd40f=_0x135bf4[_0x3bd2b2(0xa6)](_0x2ffcf5=>_0x2ffcf5[_0x3bd2b2(0x9a)]===_0x3bd2b2(0x148))[_0x3bd2b2(0xdf)](()=>Math[_0x3bd2b2(0x119)]()-0.5),_0x94eaef=_0x135bf4[_0x3bd2b2(0xa6)](_0xc1f4a2=>_0xc1f4a2[_0x3bd2b2(0x9a)]===_0x3bd2b2(0x190))[_0x3bd2b2(0xdf)](()=>Math[_0x3bd2b2(0x119)]()-0.5),_0x326cb9=_0x135bf4['filter'](_0x5b7f34=>_0x5b7f34[_0x3bd2b2(0x9a)]==='Evil')[_0x3bd2b2(0xdf)](()=>Math['random']()-0.5);if(_0x38eb19[_0x3bd2b2(0xe6)]<_0x3c8f24['aldeao']||_0x94eaef[_0x3bd2b2(0xe6)]<_0x3c8f24[_0x3bd2b2(0xa4)]||_0x326cb9[_0x3bd2b2(0xe6)]<_0x3c8f24[_0x3bd2b2(0xc5)]){showMsg(_0x3bd2b2(0xb4)+_0x1b0462['toUpperCase']()+'\x22!',!![]);return;}let _0x1c3d97=[];for(let _0x4c7c63=0x0;_0x4c7c63<_0x3c8f24['evil'];_0x4c7c63++)_0x1c3d97[_0x3bd2b2(0x18b)](_0x326cb9[_0x3bd2b2(0x105)]());for(let _0x235888=0x0;_0x235888<_0x3c8f24['minion'];_0x235888++)_0x1c3d97[_0x3bd2b2(0x18b)](_0x94eaef[_0x3bd2b2(0x105)]());for(let _0x577fbe=0x0;_0x577fbe<_0x3c8f24['forasteiro'];_0x577fbe++)_0x1c3d97[_0x3bd2b2(0x18b)](_0xadd40f[_0x3bd2b2(0x105)]());for(let _0x2fb8d7=0x0;_0x2fb8d7<_0x3c8f24[_0x3bd2b2(0xb0)];_0x2fb8d7++)_0x1c3d97[_0x3bd2b2(0x18b)](_0x38eb19[_0x3bd2b2(0x105)]());const _0x18e75f=[..._0x1be282][_0x3bd2b2(0xdf)](()=>Math['random']()-0.5);_0x1c3d97['sort'](()=>Math[_0x3bd2b2(0x119)]()-0.5),document[_0x3bd2b2(0x126)](_0x3bd2b2(0x173))['forEach'](_0x175f20=>{const _0xae246a=_0x3bd2b2,_0x594bbc=_0x175f20[_0xae246a(0x14e)]('input[type=checkbox]'),_0x18001b=_0x175f20[_0xae246a(0x14e)](_0xae246a(0x103));_0x594bbc[_0xae246a(0x17a)]=![],_0x18001b['value']='',_0x18001b['style'][_0xae246a(0x188)]=_0xae246a(0xe9);}),_0x1c3d97[_0x3bd2b2(0x9b)]((_0xb2b47c,_0x4256da)=>{const _0x10f63e=_0x3bd2b2,_0x2d5411=document[_0x10f63e(0x14e)](_0x10f63e(0x122)+_0xb2b47c[_0x10f63e(0xb2)]+'\x22]');if(_0x2d5411){const _0x549c1f=_0x2d5411[_0x10f63e(0xd1)](_0x10f63e(0x173)),_0xe77a83=_0x549c1f['querySelector'](_0x10f63e(0xec));_0x2d5411[_0x10f63e(0x17a)]=!![],_0xe77a83[_0x10f63e(0x138)][_0x10f63e(0x188)]='block',_0xe77a83[_0x10f63e(0xbf)]=_0x18e75f[_0x4256da];}}),document[_0x3bd2b2(0x104)](_0x3bd2b2(0x154))[_0x3bd2b2(0xbf)]=_0x5138b7,atualizarTrackerSetup(),atualizarOpcoesDrunk(),showMsg('🎲\x20Sorteio\x20realizado!\x20Checkboxes\x20marcados\x20e\x20nomes\x20preenchidos.');}function enviarParaFirebaseManual(){const _0x14cf66=_0x2075f7,_0x333589=[];document[_0x14cf66(0x126)](_0x14cf66(0x173))[_0x14cf66(0x9b)](_0x173ba6=>{const _0x97cab=_0x14cf66,_0x497638=_0x173ba6[_0x97cab(0x14e)](_0x97cab(0x18e)),_0x1750af=_0x173ba6[_0x97cab(0x14e)](_0x97cab(0x103));if(_0x497638&&_0x497638[_0x97cab(0x17a)]){if(!_0x1750af[_0x97cab(0xbf)][_0x97cab(0x156)]()){showMsg(_0x97cab(0xfe),!![]);return;}const _0x5713b3=PERSONAGENS[_0x97cab(0x15f)](_0x2c1d91=>_0x2c1d91[_0x97cab(0xb2)]===_0x497638['dataset']['name']);_0x333589[_0x97cab(0x18b)]({'personagem':_0x5713b3[_0x97cab(0xb2)],'tipo':_0x5713b3[_0x97cab(0x9a)],'jogador':_0x1750af[_0x97cab(0xbf)]['trim']()[_0x97cab(0x166)](),'habilidade':_0x5713b3[_0x97cab(0xf9)]});}});const _0x5cfa1d=parseInt(document['getElementById'](_0x14cf66(0x154))[_0x14cf66(0xbf)]);if(_0x333589[_0x14cf66(0xe6)]!==_0x5cfa1d){showMsg(_0x14cf66(0xbb)+_0x5cfa1d+_0x14cf66(0x163)+_0x333589[_0x14cf66(0xe6)]+').',!![]);return;}if(!_0x333589[_0x14cf66(0x12b)](_0x1c4ae0=>_0x1c4ae0['tipo']===_0x14cf66(0x184))){showMsg('O\x20jogo\x20precisa\x20de\x20pelo\x20menos\x201\x20vilão\x20(Monstro).',!![]);return;}let _0x31f41e=document[_0x14cf66(0x104)](_0x14cf66(0xb3))['value'];if(_0x31f41e===_0x14cf66(0x175)){const _0x1694b9=_0x333589['filter'](_0x58992b=>_0x58992b['tipo']===_0x14cf66(0x145));_0x1694b9[_0x14cf66(0xe6)]>0x0?_0x31f41e=_0x1694b9[Math[_0x14cf66(0x185)](Math[_0x14cf66(0x119)]()*_0x1694b9[_0x14cf66(0xe6)])][_0x14cf66(0xe2)]:_0x31f41e='';}salvarEEnviarFirebase(_0x333589,_0x31f41e);}function salvarEEnviarFirebase(_0x1b3fcd,_0x40dd2e){const _0x424253=_0x2075f7,_0x4054ab={'num_jogadores':_0x1b3fcd[_0x424253(0xe6)],'personagens_selecionados':_0x1b3fcd};localStorage[_0x424253(0xce)]('setup_botc',JSON['stringify'](_0x4054ab)),db['ref'](_0x424253(0xff))[_0x424253(0x9e)]()[_0x424253(0x143)](()=>{const _0x2c28a9=_0x424253,_0x670fae={};_0x670fae[_0x2c28a9(0xe5)]=![],_0x670fae['partida/configuracao/matadorJaAtirou']=![];_0x40dd2e&&_0x40dd2e!==''&&(_0x670fae['partida/configuracao/personagemDrunk/'+_0x40dd2e]='P');_0x670fae[_0x2c28a9(0x15d)]=!![],_0x670fae[_0x2c28a9(0xd5)]='aberto';const _0x4ef0d8=_0x1b3fcd[_0x2c28a9(0xa6)](_0x219045=>_0x219045['tipo']===_0x2c28a9(0x145))['map'](_0x561343=>_0x561343[_0x2c28a9(0xe2)]),_0x7aeff4=PERSONAGENS['filter'](_0x2f7d83=>_0x2f7d83[_0x2c28a9(0x9a)]===_0x2c28a9(0x145)&&!_0x4ef0d8[_0x2c28a9(0x161)](_0x2f7d83[_0x2c28a9(0xb2)]))[_0x2c28a9(0xdf)](()=>Math[_0x2c28a9(0x119)]()-0.5);_0x670fae[_0x2c28a9(0xdd)]=_0x7aeff4[_0x2c28a9(0xa7)](0x0,0x3)['map'](_0x52c421=>_0x52c421[_0x2c28a9(0xb2)]);const _0x3465fc=_0x1b3fcd['find'](_0x1b9144=>_0x1b9144[_0x2c28a9(0xe2)]===_0x2c28a9(0x17d));if(_0x3465fc){const _0x21acd1=_0x1b3fcd[_0x2c28a9(0xa6)](_0x18c7ce=>_0x18c7ce['tipo']===_0x2c28a9(0x145)&&_0x18c7ce['personagem']!==_0x40dd2e&&_0x18c7ce[_0x2c28a9(0x130)]!==_0x3465fc[_0x2c28a9(0x130)]);if(_0x21acd1['length']>0x0){const _0x53ba08=_0x21acd1[Math[_0x2c28a9(0x185)](Math[_0x2c28a9(0x119)]()*_0x21acd1[_0x2c28a9(0xe6)])],_0x2fc74d=_0x1b3fcd[_0x2c28a9(0xa6)](_0x536e69=>_0x536e69[_0x2c28a9(0x130)]!==_0x3465fc[_0x2c28a9(0x130)]&&_0x536e69[_0x2c28a9(0x130)]!==_0x53ba08['jogador']),_0x4d2e7b=_0x2fc74d[Math[_0x2c28a9(0x185)](Math[_0x2c28a9(0x119)]()*_0x2fc74d[_0x2c28a9(0xe6)])];_0x670fae[_0x2c28a9(0x112)]=_0x53ba08[_0x2c28a9(0xe2)],_0x670fae[_0x2c28a9(0x17b)]=_0x53ba08[_0x2c28a9(0x130)],_0x670fae[_0x2c28a9(0x12a)]=_0x4d2e7b[_0x2c28a9(0x130)];}}const _0x3189c3=_0x1b3fcd[_0x2c28a9(0x15f)](_0x3f88e7=>_0x3f88e7[_0x2c28a9(0xe2)]===_0x2c28a9(0x13b));if(_0x3189c3){const _0x1bfbfb=_0x1b3fcd['filter'](_0x541eb2=>(_0x541eb2[_0x2c28a9(0x9a)]===_0x2c28a9(0x148)||_0x541eb2[_0x2c28a9(0xe2)]===_0x40dd2e)&&_0x541eb2['jogador']!==_0x3189c3[_0x2c28a9(0x130)]);if(_0x1bfbfb[_0x2c28a9(0xe6)]>0x0){const _0x32d0d0=_0x1bfbfb[Math[_0x2c28a9(0x185)](Math[_0x2c28a9(0x119)]()*_0x1bfbfb['length'])],_0x260b5d=_0x1b3fcd[_0x2c28a9(0xa6)](_0x5066f7=>_0x5066f7['jogador']!==_0x3189c3[_0x2c28a9(0x130)]&&_0x5066f7[_0x2c28a9(0x130)]!==_0x32d0d0[_0x2c28a9(0x130)]),_0x3f201b=_0x260b5d[Math[_0x2c28a9(0x185)](Math[_0x2c28a9(0x119)]()*_0x260b5d[_0x2c28a9(0xe6)])];_0x670fae[_0x2c28a9(0xd6)]=_0x32d0d0[_0x2c28a9(0xe2)]===_0x40dd2e?_0x2c28a9(0x165):_0x32d0d0['personagem'],_0x670fae['partida/escolhasNoite/selectedBibliotecárioRealPlayer']=_0x32d0d0[_0x2c28a9(0x130)],_0x670fae['partida/escolhasNoite/selectedBibliotecárioFakePlayer']=_0x3f201b[_0x2c28a9(0x130)];}}const _0x1b2680=_0x1b3fcd['find'](_0x476703=>_0x476703['personagem']===_0x2c28a9(0x172));if(_0x1b2680){const _0x2006cc=_0x1b3fcd[_0x2c28a9(0xa6)](_0x15e904=>_0x15e904[_0x2c28a9(0x9a)]===_0x2c28a9(0x190));if(_0x2006cc[_0x2c28a9(0xe6)]>0x0){const _0x31cfdb=_0x2006cc[Math[_0x2c28a9(0x185)](Math[_0x2c28a9(0x119)]()*_0x2006cc[_0x2c28a9(0xe6)])],_0xd5655a=_0x1b3fcd['filter'](_0x623841=>_0x623841[_0x2c28a9(0x130)]!==_0x1b2680[_0x2c28a9(0x130)]&&_0x623841[_0x2c28a9(0x130)]!==_0x31cfdb['jogador']),_0x4067ae=_0xd5655a[Math[_0x2c28a9(0x185)](Math['random']()*_0xd5655a['length'])];_0x670fae[_0x2c28a9(0x177)]=_0x31cfdb[_0x2c28a9(0xe2)],_0x670fae[_0x2c28a9(0xcb)]=_0x31cfdb[_0x2c28a9(0x130)],_0x670fae['partida/escolhasNoite/selectedInvestigadorFakePlayer']=_0x4067ae[_0x2c28a9(0x130)];}}const _0x44a6c9=[..._0x1b3fcd][_0x2c28a9(0xdf)](()=>Math[_0x2c28a9(0x119)]()-0.5);_0x44a6c9['forEach']((_0x393213,_0x3c4f62)=>{const _0x232c44=_0x2c28a9,_0x36c93b=_0x393213[_0x232c44(0x130)][_0x232c44(0x118)](/[.#$[\]]/g,'');_0x670fae[_0x232c44(0x106)+_0x36c93b]={'personagem':_0x393213['personagem'],'tipo':_0x393213[_0x232c44(0x9a)],'jogador':_0x393213[_0x232c44(0x130)],'habilidade':_0x393213[_0x232c44(0xf9)],'vivo':!![],'senha':'','posicao':_0x3c4f62};}),db[_0x2c28a9(0xa8)]()['update'](_0x670fae)[_0x2c28a9(0x143)](()=>showMsg(_0x2c28a9(0x17e)))['catch'](_0x5f328e=>showMsg(_0x2c28a9(0x102)+_0x5f328e,!![]));});}function carregarNomesLobbyFirebase(){const _0x39fc19=_0x2075f7;showMsg(_0x39fc19(0x13e)),db[_0x39fc19(0xa8)](_0x39fc19(0xe8))['once'](_0x39fc19(0xbf))[_0x39fc19(0x143)](_0x1c1466=>{const _0x1c52cc=_0x39fc19,_0x256df4=_0x1c1466[_0x1c52cc(0xc8)]();if(!_0x256df4)return showMsg(_0x1c52cc(0x9c),!![]);const _0x8338d3=Object[_0x1c52cc(0x9d)](_0x256df4)[_0x1c52cc(0x17c)](_0x380024=>_0x380024[_0x1c52cc(0x166)]());document['getElementById']('listaNomesSorteio')[_0x1c52cc(0xbf)]=_0x8338d3[_0x1c52cc(0xc3)]('\x0a'),document[_0x1c52cc(0x104)](_0x1c52cc(0x154))[_0x1c52cc(0xbf)]=_0x8338d3[_0x1c52cc(0xe6)],atualizarTrackerSetup(),showMsg('Nomes\x20do\x20lobby\x20carregados!');})[_0x39fc19(0xab)](_0x222ea3=>showMsg(_0x39fc19(0x11f)+_0x222ea3,!![]));}function editarPartidaFirebase(){const _0x31abe9=_0x2075f7;showMsg('Carregando\x20partida\x20atual\x20do\x20Firebase...'),db['ref'](_0x31abe9(0xb1))[_0x31abe9(0x121)]('value')[_0x31abe9(0x143)](_0x447f0b=>{const _0x5da3d3=_0x31abe9,_0x38db9d=_0x447f0b[_0x5da3d3(0xc8)]();if(!_0x38db9d)return showMsg(_0x5da3d3(0x15a),!![]);edicaoFiltroSelect[_0x5da3d3(0xbf)]='todos',renderizarPersonagens(),document[_0x5da3d3(0x126)]('.character')['forEach'](_0x44d751=>{const _0x4eeace=_0x5da3d3,_0x3a374f=_0x44d751['querySelector'](_0x4eeace(0x18e)),_0x1a310d=_0x44d751[_0x4eeace(0x14e)]('input[type=text]');_0x3a374f['checked']=![],_0x1a310d[_0x4eeace(0xbf)]='',_0x1a310d[_0x4eeace(0x138)][_0x4eeace(0x188)]=_0x4eeace(0xe9);});let _0x3d5b16=0x0,_0x315bdb=[];for(let _0x3bdaec in _0x38db9d){const _0x4f8b71=_0x38db9d[_0x3bdaec];_0x315bdb[_0x5da3d3(0x18b)](_0x4f8b71['jogador'][_0x5da3d3(0x166)]());const _0x520629=document['querySelector']('input[data-name=\x22'+_0x4f8b71['personagem']+'\x22]');if(_0x520629){const _0x3ecad4=_0x520629[_0x5da3d3(0xd1)]('.character'),_0x1b5e5d=_0x3ecad4[_0x5da3d3(0x14e)]('input[type=\x22text\x22]');_0x520629[_0x5da3d3(0x17a)]=!![],_0x1b5e5d[_0x5da3d3(0xbf)]=_0x4f8b71[_0x5da3d3(0x130)][_0x5da3d3(0x166)](),_0x1b5e5d[_0x5da3d3(0x138)][_0x5da3d3(0x188)]='block',_0x3d5b16++;}}document['getElementById'](_0x5da3d3(0xd3))[_0x5da3d3(0xbf)]=_0x315bdb['join']('\x0a'),document[_0x5da3d3(0x104)](_0x5da3d3(0x154))[_0x5da3d3(0xbf)]=_0x3d5b16,atualizarTrackerSetup(),atualizarOpcoesDrunk(),showMsg(_0x5da3d3(0x101));});}function limparPartidaFirebase(){const _0x18393f=_0x2075f7;confirm(_0x18393f(0xcf))&&db['ref'](_0x18393f(0xff))['remove']()['then'](()=>showMsg(_0x18393f(0xfa)))[_0x18393f(0xab)](_0x5c8cca=>showMsg(_0x18393f(0x11f)+_0x5c8cca,!![]));}function popularSelectJogosProntos(){const _0x1011a3=_0x2075f7,_0x4a9843=document['getElementById'](_0x1011a3(0x181));if(!_0x4a9843)return;_0x4a9843[_0x1011a3(0x146)]=_0x1011a3(0x15b),Object[_0x1011a3(0x9d)](JOGOS_PRONTOS)[_0x1011a3(0x9b)](_0x1d8303=>{const _0x13eb3c=_0x1011a3,_0x5c7c36=JOGOS_PRONTOS[_0x1d8303],_0x14d7d9=document[_0x13eb3c(0xe3)]('option');_0x14d7d9['value']=_0x1d8303,_0x14d7d9[_0x13eb3c(0x135)]=_0x5c7c36[_0x13eb3c(0xb2)],_0x4a9843['appendChild'](_0x14d7d9);});}popularSelectJogosProntos();function carregarJogoPronto(_0x2cb9d3){const _0x10a126=_0x2075f7;if(!_0x2cb9d3||!JOGOS_PRONTOS[_0x2cb9d3])return;const _0x3e33a9=JOGOS_PRONTOS[_0x2cb9d3];edicaoFiltroSelect['value']=_0x3e33a9[_0x10a126(0xb9)],renderizarPersonagens(),document[_0x10a126(0x126)]('.character')[_0x10a126(0x9b)](_0x58d679=>{const _0x15fce7=_0x10a126,_0x2dcf94=_0x58d679[_0x15fce7(0x14e)](_0x15fce7(0x18e)),_0x52f25d=_0x58d679[_0x15fce7(0x14e)](_0x15fce7(0x103));if(_0x2dcf94)_0x2dcf94[_0x15fce7(0x17a)]=![];_0x52f25d&&(_0x52f25d[_0x15fce7(0xbf)]='',_0x52f25d[_0x15fce7(0x138)][_0x15fce7(0x188)]=_0x15fce7(0xe9));}),_0x3e33a9[_0x10a126(0x11a)][_0x10a126(0x9b)](_0x1447d4=>{const _0x3d65f6=_0x10a126,_0x330659=document[_0x3d65f6(0x14e)](_0x3d65f6(0x122)+_0x1447d4[_0x3d65f6(0xe2)]+'\x22]');if(_0x330659){const _0x31596e=_0x330659['closest'](_0x3d65f6(0x173)),_0x4abecf=_0x31596e[_0x3d65f6(0x14e)](_0x3d65f6(0xec));_0x330659[_0x3d65f6(0x17a)]=!![],_0x4abecf[_0x3d65f6(0x138)][_0x3d65f6(0x188)]=_0x3d65f6(0x13a),_0x4abecf[_0x3d65f6(0xbf)]=_0x1447d4['jogador'][_0x3d65f6(0x166)]();}}),document[_0x10a126(0x104)](_0x10a126(0x154))[_0x10a126(0xbf)]=_0x3e33a9[_0x10a126(0x182)],atualizarTrackerSetup(),atualizarOpcoesDrunk(),_0x3e33a9[_0x10a126(0x187)]!==undefined&&(document[_0x10a126(0x104)](_0x10a126(0xb3))[_0x10a126(0xbf)]=_0x3e33a9[_0x10a126(0x187)]),showMsg(_0x10a126(0x127)+_0x3e33a9[_0x10a126(0xb2)]+_0x10a126(0xfc));}let primeiroSelecionado=null;function abrirReordenacao(){const _0x5b05f4=_0x2075f7;showMsg('Lendo\x20grimório...'),db[_0x5b05f4(0xa8)](_0x5b05f4(0xb1))[_0x5b05f4(0x121)](_0x5b05f4(0xbf))[_0x5b05f4(0x143)](_0x4fad9c=>{const _0x2de5e7=_0x5b05f4,_0x4c2747=[];_0x4fad9c['forEach'](_0x1b34e7=>{const _0x59c108=_0x3780;_0x4c2747[_0x59c108(0x18b)]({'id':_0x1b34e7[_0x59c108(0xc1)],..._0x1b34e7[_0x59c108(0xc8)]()});}),_0x4c2747[_0x2de5e7(0xdf)]((_0x418da5,_0x185de7)=>_0x418da5['posicao']-_0x185de7[_0x2de5e7(0xf0)]);const _0x48428d=document[_0x2de5e7(0x104)]('reorder-list');_0x48428d[_0x2de5e7(0x146)]='',primeiroSelecionado=null,_0x4c2747[_0x2de5e7(0x9b)]((_0x4181c2,_0x1d9ff0)=>{const _0x52e06f=_0x2de5e7,_0x282053=document[_0x52e06f(0xe3)](_0x52e06f(0x134));_0x282053['className']='reorder-item',_0x282053[_0x52e06f(0x138)]=_0x52e06f(0x179),_0x282053['dataset']['id']=_0x4181c2['id'],_0x282053[_0x52e06f(0x146)]='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22font-weight:bold;\x20margin-right:15px;\x20color:#fbc02d;\x22>'+_0x1d9ff0+_0x52e06f(0x108)+_0x4181c2[_0x52e06f(0x130)]+_0x52e06f(0xd4)+_0x4181c2['personagem']+_0x52e06f(0xe1),_0x282053[_0x52e06f(0xf3)]=()=>tratarCliqueTroca(_0x282053),_0x48428d[_0x52e06f(0x16a)](_0x282053);}),document['getElementById'](_0x2de5e7(0x113))['style'][_0x2de5e7(0x188)]=_0x2de5e7(0x13a);});}function tratarCliqueTroca(_0x1da06d){const _0x39adf5=_0x2075f7;if(!primeiroSelecionado)primeiroSelecionado=_0x1da06d,_0x1da06d[_0x39adf5(0x144)][_0x39adf5(0xd9)](_0x39adf5(0xde));else{if(primeiroSelecionado===_0x1da06d)primeiroSelecionado['classList'][_0x39adf5(0x9e)]('selected'),primeiroSelecionado=null;else{const _0x47d4f3=document[_0x39adf5(0x104)](_0x39adf5(0x16c)),_0x4a1d0a=primeiroSelecionado['nextSibling'],_0x355727=_0x1da06d[_0x39adf5(0x124)];if(_0x4a1d0a===_0x1da06d)_0x47d4f3['insertBefore'](_0x1da06d,primeiroSelecionado);else _0x355727===primeiroSelecionado?_0x47d4f3[_0x39adf5(0xd7)](primeiroSelecionado,_0x1da06d):(_0x47d4f3['insertBefore'](_0x1da06d,_0x4a1d0a),_0x47d4f3[_0x39adf5(0xd7)](primeiroSelecionado,_0x355727));primeiroSelecionado['classList'][_0x39adf5(0x9e)]('selected'),primeiroSelecionado=null,atualizarNumerosVisuais();}}}function atualizarNumerosVisuais(){const _0x3aa27a=_0x2075f7;document[_0x3aa27a(0x126)]('.reorder-item\x20span:first-child')[_0x3aa27a(0x9b)]((_0x160d0f,_0x52eda6)=>{const _0x35d99b=_0x3aa27a;_0x160d0f[_0x35d99b(0x139)]=_0x52eda6;});}function salvarNovaOrdem(){const _0x3f2089=_0x2075f7,_0x3e44b1=document['querySelectorAll'](_0x3f2089(0xc9)),_0x5a0679={};_0x3e44b1[_0x3f2089(0x9b)]((_0x1cdc94,_0x5e21d3)=>{const _0x46e80f=_0x3f2089,_0x2ad261=_0x1cdc94[_0x46e80f(0xe0)]['id'];_0x5a0679[_0x46e80f(0x106)+_0x2ad261+_0x46e80f(0x125)]=_0x5e21d3;}),db[_0x3f2089(0xa8)]()['update'](_0x5a0679)[_0x3f2089(0x143)](()=>{const _0x237f6c=_0x3f2089;showMsg(_0x237f6c(0xef)),document[_0x237f6c(0x104)]('reorder-container')[_0x237f6c(0x138)][_0x237f6c(0x188)]=_0x237f6c(0xe9);})[_0x3f2089(0xab)](_0x178415=>showMsg(_0x3f2089(0x16f)+_0x178415,!![]));}function _0x2950(){const _0x2b85d1=['closest','track-aldeao','listaNomesSorteio','</strong><br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22color:\x20#666;\x22>','partida/configuracao/statusLobby','partida/escolhasNoite/selectedBibliotecárioRole','insertBefore','Cada\x20noite\x20(exceto\x20a\x20primeira)\x20você\x20aprende\x20qual\x20personagem\x20morreu\x20por\x20execução\x20hoje.','add','Se\x20houver\x205\x20ou\x20mais\x20jogadores\x20vivos\x20(viajantes\x20não\x20contam)\x20e\x20o\x20Monstro\x20morrer,\x20você\x20se\x20torna\x20o\x20Monstro.','MARIA','Empata','partida/configuracao/blefesLobisomem','selected','sort','dataset','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22font-size:\x2020px;\x22>🔄</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','personagem','createElement','werewolf-877af.firebasestorage.app','partida/configuracao/virgemJaNomeada','length','click','partida/lobby','none','870260xAEkCj','character\x20','input[type=\x22text\x22]','Geryon','snackbar','✅\x20Posições\x20atualizadas\x20com\x20sucesso!','posicao','Gênio\x20do\x20Crime','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22AUTO\x22>🎲\x20Aleatório\x20(Qualquer\x20Aldeão\x20em\x20jogo)</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22\x22>Ninguém\x20é\x20o\x20Bêbado</option>\x0a\x20\x20\x20\x20\x20\x20','onclick','Chefe','Uma\x20vez\x20por\x20jogo,\x20durante\x20o\x20dia,\x20escolha\x20publicamente\x20um\x20jogador:\x20se\x20ele\x20for\x20o\x20Monstro,\x20ele\x20morre.','Apostador','31045464WRJaIX','bg-aldeao','habilidade','🔥\x20Partida\x20resetada!','Na\x20primeira\x20vez\x20em\x20que\x20você\x20é\x20indicado,\x20se\x20o\x20nomeador\x20for\x20um\x20Aldeão,\x20ele\x20é\x20executado\x20imediatamente.','\x22\x20carregado!','Você\x20começa\x20sabendo\x20que\x201\x20de\x202\x20jogadores\x20é\x20um\x20Forasteiro\x20e\x20qual\x20o\x20personagem\x20(Ou\x20que\x20zero\x20estão\x20em\x20jogo.)','Preencha\x20o\x20nome\x20de\x20todos\x20os\x20jogadores\x20selecionados.','partida','removeChild','Dados\x20carregados\x20nos\x20checkboxes!','Erro\x20ao\x20sincronizar\x20com\x20Firebase:\x20','input[type=text]','getElementById','pop','partida/jogadores/','Se\x20um\x20Minion\x20morrer\x20por\x20execução,\x20todos\x20os\x20outros\x20jogadores\x20(exceto\x20você)\x20ficam\x20bêbados\x20até\x20o\x20próximo\x20anoitecer.','</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22flex-grow:1;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<strong>','Se\x20você\x20morrer\x20pela\x20primeira\x20vez,\x20você\x20parece\x20morto,\x20mas\x20ainda\x20está\x20vivo.\x20Se\x20ninguém\x20morrer\x20à\x20noite,\x20você\x20pode\x20atacar.','Insira\x20pelo\x20menos\x205\x20nomes\x20para\x20realizar\x20o\x20sorteio.','name','Cada\x20noite,\x20escolha\x20um\x20jogador\x20(diferente\x20da\x20noite\x20anterior):\x20se\x20ele\x20for\x20executado\x20amanhã,\x20ele\x20não\x20morre.','Coveiro','Matador','1:177329283782:web:30a6c6cf8732df0f802dc7','Você\x20pensa\x20que\x20é\x20o\x20Monstro,\x20mas\x20não\x20é.\x20O\x20Monstro\x20sabe\x20quem\x20você\x20é\x20e\x20quem\x20você\x20escolhe\x20à\x20noite.','application/json','partida/escolhasNoite/selectedLavadeiraRole','reorder-container','Barão','input[type=checkbox]:checked','edicaoFiltro','192550sAaTJv','replace','random','jogadores','LUCAS','Cada\x20noite\x20você\x20aprende\x20quantos\x20de\x20seus\x202\x20vizinhos\x20vivos\x20são\x20maus.','Cada\x20noite,\x20escolha\x20um\x20jogador:\x20ele\x20estará\x20envenenado\x20à\x20noite\x20e\x20à\x20amanhã.','Exorcista','Erro:\x20','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20placeholder=\x22Nome\x20do\x20jogador\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22display:none;\x20width:\x20100%;\x20margin-top:\x208px;\x20padding:\x205px;\x20border-radius:\x204px;\x20border:\x201px\x20solid\x20#555;\x20background:\x20#fff;\x20color:\x20#000;\x22>\x0a\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','once','input[data-name=\x22','177329283782','nextSibling','/posicao','querySelectorAll','🎮\x20Preset\x20\x22','PEDRO','Você\x20começa\x20sabendo\x20quantos\x20pares\x20de\x20jogadores\x20do\x20mal\x20existem.','partida/escolhasNoite/selectedLavadeiraFakePlayer','some','Prefeito','track-minion','bg-evil','CARLOS','jogador','Pukka','Bobo','Uma\x20vez\x20por\x20jogo,\x20à\x20noite,\x20escolha\x20um\x20jogador\x20morto:\x20se\x20ele\x20for\x20um\x20Aldeão,\x20ele\x20irá\x20ressuscitar.','div','textContent','change','Bad\x20Moon\x20Rising\x20–\x205\x20Jogadores','style','innerText','block','Bibliotecário','Se\x20você\x20morrer\x20por\x20execução,\x20sua\x20equipe\x20perde.','8650668byBosQ','Buscando\x20lobby...','#E53935','AIzaSyDxCSYH31D5NjuvtTOpqs4XLUaee2fZ_iU','botc_backup_','Uma\x20vez\x20por\x20jogo,\x20à\x20noite,\x20escolha\x20um\x20personagem\x20(não\x20um\x20jogador):\x20se\x20ele\x20estiver\x20no\x20jogo,\x20ele\x20fica\x20bêbado\x20por\x203\x20dias\x20e\x203\x20noites.','then','classList','Aldeão','innerHTML','Guardião','Forasteiro','background','Cada\x20noite,\x20escolha\x20um\x20jogador\x20e\x20um\x20personagem:\x20se\x20esse\x20jogador\x20não\x20for\x20esse\x20personagem,\x20você\x20morre.','werewolf-877af','Soldado','createObjectURL','querySelector','Camareira','\x22\x20data-tipo=\x22','737018RBtuwE','1969868WlkClc','option','numPlayers','Marinheiro','trim','Santo','Dama\x20do\x20Chá','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span><span\x20class=\x22type-badge\x22>','Nenhuma\x20partida\x20ativa.','<option\x20value=\x22\x22>--\x20Escolha\x20um\x20jogo\x20pronto\x20--</option>','JOÃO','partida/configuracao/app_ativo','addEventListener','find','ANA','includes','Envenenador','\x20personagens\x20(atual:\x20','track-evil','Bêbado','toUpperCase','getItem','Adiciona\x202\x20Forasteiros\x20extras\x20ao\x20jogo.','forasteiro','appendChild','track-forasteiro','reorder-list','8iknVEp','Kraken','Erro\x20ao\x20salvar\x20ordem:\x20','Vovó','database','Investigador','.character','15LfFKqW','AUTO','Cada\x20noite\x20você\x20escolhe\x202\x20jogadores\x20e\x20aprende\x20se\x20qualquer\x20um\x20deles\x20é\x20um\x20Monstro.\x20Há\x20um\x20bom\x20jogador\x20que\x20se\x20aparecerá\x20como\x20um\x20Monstro\x20para\x20você.','partida/escolhasNoite/selectedInvestigadorRole','Monge','display:\x20flex;\x20align-items:\x20center;\x20padding:\x2015px;\x20border:\x201px\x20solid\x20#ddd;\x20margin-bottom:\x208px;\x20border-radius:\x2010px;\x20background:\x20#fff;\x20box-shadow:\x200\x202px\x205px\x20rgba(0,0,0,0.05);','checked','partida/escolhasNoite/selectedLavadeiraRealPlayer','map','Lavadeira','🚀\x20Partida\x20enviada\x20e\x20sincronizada\x20com\x20o\x20Firebase!','Lobisomem','className','selectJogosProntos','numJogadores','Lunático','Evil','floor','Trouble\x20Brewing\x20–\x205\x20Jogadores\x20(Iniciante)','drunk','display','bad\x20moon\x20rising','Mulher\x20Escarlate','push','Pacifista','initializeApp','input[type=checkbox]','Você\x20começa\x20sabendo\x20que\x201\x20de\x202\x20jogadores\x20é\x20Aldeão\x20e\x20qual\x20o\x20personagem.','Minion','</strong></span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20<div\x20style=\x22margin-top:\x205px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small>','Você\x20pode\x20se\x20aparecer\x20como\x20mal,\x20como\x20um\x20minion\x20ou\x20Monstro,\x20mesmo\x20que\x20morto.','Virgem','tipo','forEach','Lobby\x20vazio.','keys','remove','setup_botc','</span>\x20<strong>','toISOString','todos','split','minion','Menestrel','filter','slice','ref','Cada\x20noite\x20você\x20escolhe\x20um\x20jogador\x20(não\x20você\x20mesmo):\x20amanhã,\x20você\x20só\x20poderá\x20votar\x20se\x20esta\x20pessoa\x20escolhida\x20votar.','trouble\x20brewing','catch','Na\x20primeira\x20vez\x20em\x20que\x20você\x20for\x20morrer,\x20você\x20não\x20morre.','Cada\x20noite\x20(exceto\x20a\x20primeira),\x20escolha\x20um\x20jogador\x20para\x20morrer.','Cada\x20noite,\x20escolha\x202\x20jogadores\x20vivos\x20(não\x20você\x20mesmo):\x20você\x20descobrirá\x20quantos\x20acordaram\x20esta\x20noite\x20devido\x20à\x20sua\x20habilidade.','revokeObjectURL','aldeao','partida/jogadores','nome','selectDrunk','Personagens\x20insuficientes\x20na\x20edição\x20\x22','Cada\x20noite,\x20você\x20conhece\x20os\x20personagens\x20de\x20todos.\x20Você\x20pode\x20parecer\x20ser\x20um\x20Aldeão\x20ou\x20Forasteiro,\x20mesmo\x20que\x20morto.','CARLA','Assassino','🙈\x20Sorteio\x20Cego\x20Realizado\x20e\x20Enviado\x20ao\x20Firebase!','edicao','Cada\x20noite\x20(exceto\x20a\x20primeira)\x20você\x20escolhe\x20um\x20jogador\x20(não\x20você\x20mesmo):\x20ele\x20estará\x20a\x20salvo\x20do\x20Monstro\x20por\x20uma\x20noite.','Selecione\x20exatamente\x20','input','Cada\x20noite,\x20escolha\x20um\x20jogador\x20vivo:\x20você\x20ou\x20ele\x20ficará\x20bêbado\x20até\x20o\x20anoitecer.\x20Você\x20não\x20pode\x20morrer\x20enquanto\x20sóbrio.','\x0a\x20\x20\x20\x20\x20\x20<div\x20style=\x22display:\x20flex;\x20justify-content:\x20space-between;\x20align-items:\x20center;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20style=\x22cursor:\x20pointer;\x20display:\x20flex;\x20align-items:\x20center;\x20gap:\x208px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22checkbox\x22\x20data-name=\x22','value','Mordomo','key','4870628fmxGxO','join','Cada\x20noite,\x20escolha\x202\x20jogadores\x20para\x20morrer.\x20Um\x20jogador\x20morto\x20por\x20você\x20pode\x20ressuscitar\x20na\x20noite\x20seguinte.','evil','Professor','bg-forasteiro','val','.reorder-item','Zombie','partida/escolhasNoite/selectedInvestigadorRealPlayer','Você\x20começa\x20sabendo\x20que\x201\x20de\x202\x20jogadores\x20é\x20um\x20Minion\x20e\x20qual\x20o\x20personagem.','Você\x20está\x20a\x20salvo\x20do\x20Monstro.','setItem','Tem\x20certeza\x20que\x20deseja\x20apagar\x20a\x20partida\x20do\x20Firebase?','Trouble\x20Brewing\x20–\x207\x20Jogadores\x20(Com\x20Bêbado)'];_0x2950=function(){return _0x2b85d1;};return _0x2950();}function downloadGame(){const _0x383572=_0x2075f7,_0xec0792=localStorage[_0x383572(0x167)](_0x383572(0x9f));if(!_0xec0792)return showMsg('Nenhum\x20jogo\x20salvo\x20localmente.',!![]);const _0x2b2540=new Blob([_0xec0792],{'type':_0x383572(0x111)}),_0x47613e=URL[_0x383572(0x14d)](_0x2b2540),_0x5e493c=document[_0x383572(0xe3)]('a');_0x5e493c['href']=_0x47613e,_0x5e493c['download']=_0x383572(0x141)+new Date()[_0x383572(0xa1)]()['slice'](0x0,0xa)+'.json',document['body']['appendChild'](_0x5e493c),_0x5e493c[_0x383572(0xe7)](),document['body'][_0x383572(0x100)](_0x5e493c),URL[_0x383572(0xaf)](_0x47613e),showMsg('Backup\x20baixado\x20com\x20sucesso!');}
+  </script>
+
+</body>
+
+</html>
